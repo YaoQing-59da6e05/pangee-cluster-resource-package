@@ -377,4 +377,4 @@ metadata:
         - "20.03"
         - "22.03"
   type: pangee-cluster-resource-package
-  version: pangee-cluster-1.28.15_v1
+  version: v1.28.15_v1
