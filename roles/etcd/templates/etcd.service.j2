@@ -1,0 +1,17 @@
+[Unit]
+Description=Etcd Server
+After=network.target
+
+[Service]
+Type=notify
+WorkingDirectory={{ etcd_data_dir }}
+EnvironmentFile=/etc/etcd/etcd.conf
+{% if host_cpu_architecture == "arm64" %}
+Environment=ETCD_UNSUPPORTED_ARCH=arm64
+{% endif %}
+ExecStart={{ root_dir }}/usr/bin/etcd
+RestartSec=3
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

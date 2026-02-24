@@ -1,0 +1,6 @@
+start_command:
+  - mkdir -p {{ root_dir }}/backup
+  - kubectl get deployments.apps -A -o custom-columns="NAMESPACE:.metadata.namespace,NAME:.metadata.name,REPLICAS:.spec.replicas" --no-headers > {{ root_dir }}/backup/deployments.txt
+  - kubectl get statefulsets.apps -A -o custom-columns="NAMESPACE:.metadata.namespace,NAME:.metadata.name,REPLICAS:.spec.replicas" --no-headers > {{ root_dir }}/backup/statefulsets.txt
+  - cat {{ root_dir }}/backup/deployments.txt | awk '{print "kubectl scale deployment --replicas=0 -n",$1,$2}' | sh
+  - cat {{ root_dir }}/backup/statefulsets.txt | awk '{print "kubectl scale statefulset --replicas=0 -n",$1,$2}' | sh

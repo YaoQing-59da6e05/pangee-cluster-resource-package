@@ -1,0 +1,36 @@
+# kubernetes system config
+#
+# The following values are used to configure the kube-apiserver
+
+# How the controller-manager, scheduler, and proxy find the apiserver
+KUBE_API_ARGS=" --bind-address=0.0.0.0 --secure-port={{ kube_apiserver_port }} --authorization-mode=RBAC --anonymous-auth=false \
+--etcd-servers={{etcd_servers}} \
+{% if kube_network_dualstack_enabled | default(false) | bool %}
+--service-cluster-ip-range={{ kube_service_cidr }},{{ kube_service_cidr_ipv6 }} \
+{% else %}
+--service-cluster-ip-range={{ kube_service_cidr }} \
+{% endif %}
+--etcd-certfile={{ kube_ssl_dir }}/etcd_client.crt \
+--etcd-keyfile={{ kube_ssl_dir }}/etcd_client.key \
+--etcd-cafile={{ kube_ssl_dir }}/ca.crt \
+--service-account-issuer=https://kubernetes.default.svc.cluster.local \
+--service-account-key-file={{ kube_ssl_dir }}/sa.pub \
+--service-account-signing-key-file={{ kube_ssl_dir }}/sa.key \
+--kubelet-client-certificate={{ kube_ssl_dir }}/client.crt \
+--kubelet-client-key={{ kube_ssl_dir }}/client.key \
+--enable-admission-plugins=NamespaceLifecycle,LimitRanger,ServiceAccount,ResourceQuota,NodeRestriction,MutatingAdmissionWebhook,ValidatingAdmissionWebhook \
+--service-node-port-range={{ kube_service_nodeport_range }} --client-ca-file={{ kube_ssl_dir }}/ca.crt \
+--tls-cipher-suites=TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_128_GCM_SHA256 \
+--tls-private-key-file={{ kube_ssl_dir }}/apiserver.key --tls-cert-file={{ kube_ssl_dir }}/apiserver.crt \
+--v=0 --allow-privileged=true --event-ttl=48h0m0s --max-mutating-requests-inflight=500 \
+--max-requests-inflight=1500 --default-watch-cache-size=10000 --apiserver-count=3 --endpoint-reconciler-type=lease \
+--requestheader-client-ca-file={{ kube_ssl_dir }}/front-proxy-ca.crt \
+--requestheader-allowed-names= \
+--requestheader-extra-headers-prefix=X-Remote-Extra- \
+--requestheader-group-headers=X-Remote-Group \
+--requestheader-username-headers=X-Remote-User \
+--proxy-client-cert-file={{ kube_ssl_dir }}/front-proxy-client.crt \
+--proxy-client-key-file={{ kube_ssl_dir }}/front-proxy-client.key \
+--enable-aggregator-routing=true \
+--feature-gates="
+#如果缺少认证则添加SecurityContextDeny参数

@@ -1,0 +1,27 @@
+dir_list:
+  - { path: "{{ root_dir }}/etc/docker",  mode: "0755" }
+  - { path: "/etc/docker",                mode: "0755" }
+
+copy_list:
+  - { src: "{{ cache_dir }}/docker/docker",       dest: "{{ root_dir }}/usr/bin",             mode: "0755" }
+  - { src: "{{ cache_dir }}/docker/dockerd",      dest: "{{ root_dir }}/usr/bin",             mode: "0755" }
+  - { src: "{{ cache_dir }}/docker/docker-init",  dest: "{{ root_dir }}/usr/bin",             mode: "0755" }
+  - { src: "{{ cache_dir }}/docker/docker-proxy", dest: "{{ root_dir }}/usr/bin",             mode: "0755" }
+  - { src: "{{ cache_dir }}/docker-compose",      dest: "{{ root_dir }}/usr/bin",             mode: "0755" }
+  - { src: "docker.socket",                       dest: "{{ root_dir }}/etc/systemd/system",  mode: "0644" }
+
+templates:
+  - { src: "docker.service",  dest: "{{ root_dir }}/etc/systemd/system",  mode: "0644" }
+  - { src: "daemon.json",     dest: "{{ root_dir }}/etc/docker",          mode: "0644" }
+
+start_command:
+  - ln -sf {{ root_dir }}/etc/systemd/system/docker.service /etc/systemd/system
+  - ln -sf {{ root_dir }}/etc/systemd/system/docker.socket /etc/systemd/system
+  - ln -sf {{ root_dir }}/etc/docker/daemon.json /etc/docker
+  - getent group docker || groupadd docker
+  - systemctl daemon-reload
+  - systemctl enable docker
+  - systemctl restart docker
+
+check_app:
+  - systemctl status docker

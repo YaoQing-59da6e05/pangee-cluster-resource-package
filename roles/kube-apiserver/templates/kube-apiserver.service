@@ -1,0 +1,14 @@
+[Unit]
+Description=Kubernetes API Server
+Documentation=https://github.com/GoogleCloudPlatform/kubernetes
+After=network.target
+
+[Service]
+EnvironmentFile={{ kube_config_dir }}/apiserver
+ExecStart={{ root_dir }}/usr/bin/kube-apiserver $KUBE_API_ARGS
+Restart=on-failure
+Type=notify
+LimitNOFILE=65535
+
+[Install]
+WantedBy=multi-user.target

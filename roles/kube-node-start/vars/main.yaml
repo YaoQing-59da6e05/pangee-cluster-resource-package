@@ -1,0 +1,24 @@
+start_command:
+  - ln -sf {{ root_dir }}/etc/systemd/system/*.service /etc/systemd/system
+  - |
+    systemctl daemon-reload \
+    {% if inventory_hostname in groups['etcd'] %}
+    && systemctl start etcd \
+    && systemctl enable etcd \
+    {% endif %}
+    {% if inventory_hostname in groups['kube_control_plane'] or inventory_hostname in groups['kube_node']%}
+    && systemctl start containerd \
+    && systemctl enable containerd \
+    && systemctl start kubelet \
+    && systemctl enable kubelet \
+    && systemctl start kube-proxy \
+    && systemctl enable kube-proxy \
+    {% endif %}
+    {% if inventory_hostname in groups['kube_control_plane'] %}
+    && systemctl start kube-apiserver \
+    && systemctl enable kube-apiserver \
+    && systemctl start kube-controller-manager \
+    && systemctl enable kube-controller-manager \
+    && systemctl start kube-scheduler \
+    && systemctl enable kube-scheduler \
+    {% endif %}

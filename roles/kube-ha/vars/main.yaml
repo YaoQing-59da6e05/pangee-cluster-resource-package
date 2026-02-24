@@ -1,0 +1,25 @@
+dir_list:
+  - { path: "{{ kube_ha_dir }}/keepalived",  mode: "0755" }
+  - { path: "{{ kube_ha_dir }}/haproxy",     mode: "0755" }
+
+copy_list:
+  - { src: "{{ cache_dir }}/keepalived.tar.gz", dest: "/tmp" }
+  - { src: "{{ cache_dir }}/haproxy.tar.gz",    dest: "/tmp" }
+
+templates:
+  - { src: "keepalived.conf",   dest: "{{ kube_ha_dir }}/keepalived/keepalived.conf",  mode: "0664" }
+  - { src: "check.sh",          dest: "{{ kube_ha_dir }}/keepalived/check.sh",         mode: "0755" }
+  - { src: "haproxy.cfg",       dest: "{{ kube_ha_dir }}/haproxy/haproxy.cfg",         mode: "0644" }
+  - { src: "run-haproxy.sh",    dest: "{{ kube_ha_dir }}/run-haproxy.sh",              mode: "0755" }
+  - { src: "run-keepalived.sh", dest: "{{ kube_ha_dir }}/run-keepalived.sh",           mode: "0755" }
+
+start_command:
+  - nerdctl load -i /tmp/keepalived.tar.gz && rm -f /tmp/keepalived.tar.gz
+  - nerdctl load -i /tmp/haproxy.tar.gz && rm -f /tmp/haproxy.tar.gz
+  - nerdctl ps -a | grep kube-keepalived && nerdctl stop kube-keepalived && nerdctl rm kube-keepalived || true
+  - nerdctl ps -a | grep kube-haproxy && nerdctl stop kube-haproxy && nerdctl rm kube-haproxy || true
+  - cd {{ kube_ha_dir }} && ./run-haproxy.sh && ./run-keepalived.sh
+
+check_app:
+  - nerdctl ps | grep kube-keepalived | grep Up
+  - nerdctl ps | grep kube-haproxy | grep Up

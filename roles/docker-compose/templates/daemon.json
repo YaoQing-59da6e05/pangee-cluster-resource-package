@@ -1,0 +1,16 @@
+{
+  "exec-opts": ["native.cgroupdriver=systemd"],
+  "insecure-registries": [
+{% for item in groups['harbor'] %}
+    "{{ hostvars[item]['ip'] }}:{{ hostvars[item]['harbor_vip_port'] }}",
+{% endfor %}
+    "{{ hostvars[groups['harbor'][0]]['harbor_vip'] }}:{{ hostvars[groups['harbor'][0]]['harbor_vip_port'] }}"
+  ],
+  "storage-driver": "overlay2",
+  "storage-opts": [
+  ],
+  "log-opts": {
+    "max-size": "50m",
+    "max-file": "5"
+  }
+}

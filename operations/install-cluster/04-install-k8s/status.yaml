@@ -1,0 +1,113 @@
+- name: Check kubernetes Status
+  hosts: kube_control_plane
+  gather_facts: false
+  strategy: free
+  tasks:
+    - name: |
+        name: kube-apiserver_status
+        description:
+          en: Check kube-apiserver status
+          zh: 检查 kube-apiserver 服务的状态
+      shell: |+
+        systemctl status kube-apiserver | grep "active (running)" > /dev/null
+        if [ "x$?" == "x0" ]; then
+          echo "0"
+        else
+          systemctl status kube-apiserver
+        fi
+    - name: |
+        name: kube-controller-manager_status
+        description:
+          en: Check kube-controller-manager status
+          zh: 检查 kube-controller-manager 服务的状态
+      shell: |+
+        systemctl status kube-controller-manager | grep "active (running)" > /dev/null
+        if [ "x$?" == "x0" ]; then
+          echo "0"
+        else
+          systemctl status kube-controller-manager
+        fi
+    - name: |
+        name: kube-scheduler_status
+        description:
+          en: Check kube-scheduler status
+          zh: 检查 kube-scheduler 服务的状态
+      shell: |+
+        systemctl status kube-scheduler | grep "active (running)" > /dev/null
+        if [ "x$?" == "x0" ]; then
+          echo "0"
+        else
+          systemctl status kube-scheduler
+        fi
+    - name: |
+        name: keepalived_status
+        description:
+          en: Check keepalived status
+          zh: 检查 keepalived 服务的状态
+      shell: |+
+        nerdctl ps -a | grep Up | grep kube-keepalived > /dev/null
+        if [ "x$?" == "x0" ]; then
+          echo "0"
+        else
+          nerdctl ps -a | grep kube-keepalived
+        fi
+    - name: |
+        name: haproxy_status
+        description:
+          en: Check haproxy status
+          zh: 检查 haproxy 服务的状态
+      shell: |+
+        nerdctl ps -a | grep Up | grep kube-haproxy > /dev/null
+        if [ "x$?" == "x0" ]; then
+          echo "0"
+        else
+          nerdctl ps -a | grep kube-haproxy
+        fi
+    - name: |
+        name: kubelet_status
+        description:
+          en: Check kubelet status
+          zh: 检查 kubelet 服务的状态
+      shell: |+
+        systemctl status kubelet | grep "active (running)" > /dev/null
+        if [ "x$?" == "x0" ]; then
+          echo "0"
+        else
+          systemctl status kubelet
+        fi
+    - name: |
+        name: kube-proxy_status
+        description:
+          en: Check kube-proxy status
+          zh: 检查 kube-proxy 服务的状态
+      shell: |+
+        systemctl status kube-proxy | grep "active (running)" > /dev/null
+        if [ "x$?" == "x0" ]; then
+          echo "0"
+        else
+          systemctl status kube-proxy
+        fi
+    - name: |
+        name: calico_status
+        description:
+          en: Check calico status
+          zh: 检查 calico 服务的状态
+      shell: |+
+        kubectl get pods -n kube-system -o wide | grep calico-node | grep {{ hostvars[inventory_hostname]['ip'] }} | grep Running > /dev/null
+        if [ "x$?" == "x0" ]; then
+          echo "0"
+        else
+          kubectl get pods -n kube-system -o wide | grep calico-node | grep {{ hostvars[inventory_hostname]['ip'] }}
+        fi
+    - name: |
+        name: coredns_status
+        description:
+          en: Check coredns status
+          zh: 检查 coredns 服务的状态
+      shell: |+
+        kubectl get pods -n kube-system | grep coredns | grep -v Running > /dev/null
+        if [ "x$?" == "x0" ]; then
+          kubectl get pods -n kube-system | grep coredns
+        else
+          echo "0"
+        fi

@@ -1,0 +1,96 @@
+- name: Create temp directory if not exist
+  file:
+    path: "{{ temp_directory }}"
+    state: directory
+
+- name: Create target directory if not exist
+  file:
+    path: "{{ target_directory }}"
+    state: directory
+
+- name: Caculate Image Name and Tag
+  set_fact:
+    artifact_image_tag: "{{ item.artifact.image[os+'_'+arch] | default(item.artifact.image.default) | replace('${arch}', arch) | replace('${os}', os) | replace('${version}', item.version) }}"
+
+- name: Calculate Artifact File Name
+  set_fact:
+    artifact_file_name: "{{ item.name }}.tar"
+
+- name: Calculate Artifact File Path
+  set_fact:
+    artifact_file_path_temp: "{{ temp_directory }}/{{ artifact_file_name }}"
+    artifact_file_path_target: "{{ target_directory }}/{{ artifact_file_name }}.gz"
+
+- name: Check if the artifact file exists
+  stat:
+    path: "{{ artifact_file_path_target }}"
+  register: artifact_file_exists
+
+- name: Copy container image using skopeo (with proxy)
+  ansible.builtin.shell: |
+    skopeo --override-os {{ os }} --override-arch {{ arch }} copy docker://{{ artifact_image_tag }} docker-archive:{{ artifact_file_path_temp }}:{{ artifact_image_tag }}
+    gzip {{ artifact_file_path_temp }}
+    mv {{ artifact_file_path_temp }}.gz {{ artifact_file_path_target }}
+  environment:
+    http_proxy: "{{ http_proxy }}"
+    https_proxy: "{{ https_proxy }}"
+    no_proxy: "{{ additional_no_proxy }}"
+  retries: "{{ default_retries }}"
+  when: 
+    - (enable_proxy_on_download is defined and enable_proxy_on_download | bool) and (artifact_file_exists.stat.exists == false)
+
+- name: Copy container image using skopeo (no proxy)
+  ansible.builtin.shell: |
+    skopeo --override-os {{ os }} --override-arch {{ arch }} copy docker://{{ artifact_image_tag }} docker-archive:{{ artifact_file_path_temp }}:{{ artifact_image_tag }}
+    gzip {{ artifact_file_path_temp }}
+    mv {{ artifact_file_path_temp }}.gz {{ artifact_file_path_target }}
+  retries: "{{ default_retries }}"
+  when: 
+    - (enable_proxy_on_download is not defined or not (enable_proxy_on_download | bool)) and (artifact_file_exists.stat.exists == false)
+
+# - name: Pull Container Image --platform (with proxy)
+#   ansible.builtin.shell: |
+#     nerdctl pull --platform {{ os }}/{{ arch }} {{ artifact_image_tag }}
+#   environment:
+#     http_proxy: "{{ http_proxy }}"
+#     https_proxy: "{{ https_proxy }}"
+#     no_proxy: "{{ additional_no_proxy }}"
+#   retries: "{{ default_retries }}"
+#   when: 
+#     - item.artifact.pull_all_platforms | default(false) == false
+#     - enable_proxy_on_download | default(false) == true
+
+# - name: Pull Container Image --platform (no proxy)
+#   ansible.builtin.shell: |
+#     nerdctl pull --platform {{ os }}/{{ arch }} {{ artifact_image_tag }}
+#   retries: "{{ default_retries }}"
+#   when: 
+#     - item.artifact.pull_all_platforms | default(false) == false
+#     - enable_proxy_on_download | default(false) == false
+
+# - name: Pull Container Image --all-platforms (with proxy)
+#   ansible.builtin.shell: |
+#     nerdctl pull --all-platforms {{ artifact_image_tag }}
+#   environment:
+#     http_proxy: "{{ http_proxy }}"
+#     https_proxy: "{{ https_proxy }}"
+#     no_proxy: "{{ additional_no_proxy }}"
+#   retries: "{{ default_retries }}"
+#   when: 
+#     - item.artifact.pull_all_platforms | default(false) == true
+#     - enable_proxy_on_download | default(false) == true
+
+# - name: Pull Container Image --all-platforms (no proxy)
+#   ansible.builtin.shell: |
+#     nerdctl pull --all-platforms {{ artifact_image_tag }}
+#   retries: "{{ default_retries }}"
+#   when: 
+#     - item.artifact.pull_all_platforms | default(false) == true
+#     - enable_proxy_on_download | default(false) == false
+
+# - name: Export Container Image
+#   ansible.builtin.shell: |
+#     nerdctl save --platform {{ os }}/{{ arch }} --output {{ artifact_file_path_temp }} {{ artifact_image_tag }}
+#     gzip {{ artifact_file_path_temp }}
+#     mv {{ artifact_file_path_temp }}.gz {{ artifact_file_path_target }}
+#   retries: 0

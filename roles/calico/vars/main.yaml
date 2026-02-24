@@ -1,0 +1,17 @@
+dir_list:
+  - { path: "{{ root_dir }}/etc/NetworkManager/conf.d", mode: "0755" }
+  - { path: "/etc/NetworkManager/conf.d",               mode: "0755" }
+
+templates:
+  - { src: "calico.conf",                   dest: "{{ root_dir }}/etc/NetworkManager/conf.d", mode: "0644" }
+  - { src: "calico-3.23.2-ipv6-vxlan.yaml", dest: "/tmp" }
+
+start_command:
+  - ln -sf {{ root_dir }}/etc/NetworkManager/conf.d/calico.conf /etc/NetworkManager/conf.d/calico.conf
+  - systemctl restart NetworkManager
+  - kubectl delete -f /tmp/calico-3.23.2-ipv6-vxlan.yaml || true
+  - kubectl apply  -f /tmp/calico-3.23.2-ipv6-vxlan.yaml && rm -f /tmp/calico-3.23.2-ipv6-vxlan.yaml
+  - DUAL_STACK="{{ kube_network_dualstack_enabled }}"; [ x"$DUAL_STACK" != x"true" ] || kubectl patch ippool default-ipv6-ippool --type='json' -p '[{"op":"add","path":"/spec/natOutgoing","value":true}]'
+
+check_app:
+  - kubectl get pods -n kube-system --no-headers | grep calico | grep Running

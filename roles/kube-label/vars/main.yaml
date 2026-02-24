@@ -1,0 +1,6 @@
+set_facts:
+  - { var: "label_value", value: "{% if inventory_hostname in groups['kube_node'] %}{% else %}NoSchedule{% endif %}" }
+
+start_command:
+  - kubectl label nodes {{ hostvars[inventory_hostname]['ip'] }} k8s-app=coredns --overwrite
+  - kubectl label nodes {{ hostvars[inventory_hostname]['ip'] }} node-role.kubernetes.io/control-plane={{ label_value }} --overwrite

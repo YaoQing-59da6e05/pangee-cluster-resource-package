@@ -1,0 +1,90 @@
+- name: Create temp directory if not exist
+  file:
+    path: "{{ temp_directory }}"
+    state: directory
+
+- name: Create target directory if not exist
+  file:
+    path: "{{ target_directory }}"
+    state: directory
+
+- name: Caculate Download Url
+  set_fact:
+    artifact_download_url: "{{ item.artifact.url[os+'_'+arch] | default(item.artifact.url.default) | replace('${arch}', arch) | replace('${os}', os) | replace('${version}', item.version) }}"
+
+- name: Calculate Artifact File Name
+  set_fact:
+    artifact_file_name_temp: "{{ artifact_download_url.split('/')[-1] }}"
+
+- name: Print Download URL
+  debug:
+    msg: "{{ artifact_download_url }}"
+
+- name: Download URL (with proxy)
+  get_url:
+    url: "{{ artifact_download_url }}"
+    dest: "{{ temp_directory }}/{{ artifact_file_name_temp }}"
+    use_proxy: yes
+  environment:
+    http_proxy: "{{ http_proxy }}"
+    https_proxy: "{{ https_proxy }}"
+    no_proxy: "{{ additional_no_proxy }}"
+  retries: "{{ default_retries }}"
+  when: enable_proxy_on_download | default(false) == true
+
+- name: Download URL (no proxy)
+  get_url:
+    url: "{{ artifact_download_url }}"
+    dest: "{{ temp_directory }}/{{ artifact_file_name_temp }}"
+    use_proxy: no
+  retries: "{{ default_retries }}"
+  when: enable_proxy_on_download | default(false) == false
+
+- name: Get checksum
+  stat:
+    path: "{{ temp_directory }}/{{ artifact_file_name_temp }}"
+    get_checksum: yes
+    checksum_algorithm: sha256
+  register: file_checksum_result
+
+- name: Update package.yaml with checksum
+  replace:
+    path: "{{ package_dir }}/package.yaml"
+    regexp: '(\s*{{ os }}_{{ arch }}:).*'
+    replace: '\1 sha256:{{ file_checksum_result.stat.checksum }}'
+    after: 'name: {{ item.name }}'
+    before: '(\s*name:|$)'
+  when: file_checksum_result.stat.exists
+
+- name: Move binary file to target directory
+  copy:
+    src: "{{ temp_directory }}/{{ artifact_file_name_temp }}"
+    dest: "{{ target_directory }}/{{ item.name }}"
+    mode: "0755"
+  when: item.artifact.type == "binary"
+
+- name: Create temp directory if not exist
+  file:
+    path: "{{ temp_directory }}/{{ item.name }}"
+    state: directory
+  when: item.artifact.type == "tarball"
+
+- name: Create target directory if not exist
+  file:
+    path: "{{ target_directory }}/{{ item.name }}"
+    state: directory
+  when: item.artifact.type == "tarball"
+
+- name: Extract tarball file
+  unarchive:
+    src: "{{ temp_directory }}/{{ artifact_file_name_temp }}"
+    dest: "{{ temp_directory }}/{{ item.name }}"
+    remote_src: true
+  when: item.artifact.type == "tarball"
+
+- name: Move extracted file to target directory
+  copy:
+    src: "{{ temp_directory }}/{{ item.name }}/{{ item.artifact.tarball_content_directory | default('') | replace('${arch}', arch) | replace('${os}', os) | replace('${version}', item.version) }}"
+    dest: "{{ target_directory }}/{{ item.name }}"
+    mode: "0755"
+  when: item.artifact.type == "tarball"

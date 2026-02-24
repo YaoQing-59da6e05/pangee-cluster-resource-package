@@ -1,0 +1,6 @@
+copy_list:
+  - { src: "kube-exporter.sh",    dest: "{{ root_dir }}",         mode: "0755" }
+  - { src: "{{ cache_dir }}/yq",  dest: "{{ root_dir }}/usr/bin", mode: "0755" }
+
+start_command:
+  - "{{ root_dir }}/kube-exporter.sh"

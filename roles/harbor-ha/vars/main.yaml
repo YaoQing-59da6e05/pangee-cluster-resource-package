@@ -1,0 +1,18 @@
+dir_list:
+  - { path: "{{ harbor_ha_dir }}/keepalived", mode: "0755" }
+
+copy_list:
+  - { src: "{{ cache_dir }}/keepalived.tar.gz", dest: "/tmp" }
+
+templates:
+  - { src: "run-keepalived.sh", dest: "{{ harbor_ha_dir }}",            mode: "0755" }
+  - { src: "check.sh",          dest: "{{ harbor_ha_dir }}/keepalived", mode: "0755" }
+  - { src: "keepalived.conf",   dest: "{{ harbor_ha_dir }}/keepalived", mode: "0664" }
+
+start_command:
+  - nerdctl load -i /tmp/keepalived.tar.gz && rm -f /tmp/keepalived.tar.gz
+  - nerdctl ps -a | grep harbor-keepalived && nerdctl stop harbor-keepalived && nerdctl rm harbor-keepalived || true
+  - cd {{ harbor_ha_dir }} && ./run-keepalived.sh
+
+check_app:
+  - nerdctl ps | grep harbor-keepalived | grep Up

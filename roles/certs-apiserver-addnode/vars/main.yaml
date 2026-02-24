@@ -1,0 +1,10 @@
+set_facts:
+  - { var: "ssl_ext_dir", value: "/opt" }
+
+local_template:
+  - { src: "master_ssl.cnf",      dest: "{{ ssl_ext_dir }}" }
+
+local_shell:
+  - mv {{ ssl_ext_dir }}/master_ssl.cnf {{ certs_dir }}
+  - openssl req -new -key {{ certs_dir }}/apiserver.key -subj '/CN=kube-apiserver/C=CN/ST=BeiJing/L=BeiJing/OU=CMCC/O=PJPAAS' -out {{ certs_dir }}/apiserver.csr -config {{ certs_dir }}/master_ssl.cnf
+  - openssl x509 -req -in {{ certs_dir }}/apiserver.csr -CA {{ certs_dir }}/ca.crt -CAkey {{ certs_dir }}/ca.key -CAcreateserial -out {{ certs_dir }}/apiserver.crt -days 36500 -extensions v3_req -extfile {{ certs_dir }}/master_ssl.cnf

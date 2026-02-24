@@ -1,0 +1,29 @@
+- name: Check kubernetes Status
+  hosts: target
+  gather_facts: false
+  strategy: free
+  tasks:
+    - name: |
+        name: kubelet_status
+        description:
+          en: Check kubelet status
+          zh: 检查 kubelet 服务的状态
+      shell: |+
+        systemctl status kubelet | grep "active (running)" > /dev/null
+        if [ "x$?" == "x0" ]; then
+          echo "0"
+        else
+          systemctl status kubelet
+        fi
+    - name: |
+        name: kube-proxy_status
+        description:
+          en: Check kube-proxy status
+          zh: 检查 kube-proxy 服务的状态
+      shell: |+
+        systemctl status kube-proxy | grep "active (running)" > /dev/null
+        if [ "x$?" == "x0" ]; then
+          echo "0"
+        else
+          systemctl status kube-proxy
+        fi

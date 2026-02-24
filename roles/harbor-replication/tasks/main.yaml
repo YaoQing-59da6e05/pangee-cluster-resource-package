@@ -1,0 +1,25 @@
+- name: set fact
+  set_fact:
+    "{{ item.var }}": "{{ item.value }}"
+  loop: "{{ set_facts }}"
+  when: set_facts is defined
+  run_once: true
+
+- name: Copy files
+  copy:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    mode: "{{ item.mode | default(omit) }}"
+  loop: "{{ copy_list }}"
+  when: copy_list is defined
+  delegate_to: localhost
+  run_once: true
+
+- name: local shell
+  shell: "{{ item }}"
+  loop: "{{ local_shell }}"
+  loop_control:
+    label: "{{ item }}"
+  when: local_shell is defined
+  delegate_to: localhost
+  run_once: true

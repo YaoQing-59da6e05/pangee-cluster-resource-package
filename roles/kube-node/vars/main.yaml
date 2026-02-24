@@ -1,0 +1,44 @@
+set_facts:
+  - { var: "coredns_ip",  value: "{{ kube_service_cidr.split('.')[0] }}.{{ kube_service_cidr.split('.')[1] }}.{{ kube_service_cidr.split('.')[2] }}.{{ coredns_ip_suffix }}" }
+
+dir_list:
+  - { path: "{{ kube_ssl_dir }}",  mode: "0755" }
+  - { path: "/var/run/kubernetes", mode: "0755" }
+  - { path: "{{ kube_dir }}",      mode: "0755" }
+
+copy_list:
+  - { src: "{{ cache_dir }}/kubernetes/kubelet",             dest: "{{ root_dir }}/usr/bin", mode: "0755" }
+  - { src: "{{ cache_dir }}/kubernetes/kube-proxy",          dest: "{{ root_dir }}/usr/bin", mode: "0755" }
+  - { src: "{{ certs_dir }}/ca.crt",                         dest: "{{ kube_ssl_dir }}" }
+  - { src: "{{ certs_dir }}/client.key",                     dest: "{{ kube_ssl_dir }}" }
+  - { src: "{{ certs_dir }}/client.crt",                     dest: "{{ kube_ssl_dir }}" }
+  - { src: "{{ cache_dir }}/calico-cni.tar.gz",              dest: "/tmp" }
+  - { src: "{{ cache_dir }}/calico-node.tar.gz",             dest: "/tmp" }
+  - { src: "{{ cache_dir }}/calico-kube-controllers.tar.gz", dest: "/tmp" }
+
+templates:
+  - { src: "kubelet.service",          dest: "{{ root_dir }}/etc/systemd/system" }
+  - { src: "kube-proxy.service",       dest: "{{ root_dir }}/etc/systemd/system" }
+  - { src: "kubelet",                  dest: "{{ kube_config_dir }}" }
+  - { src: "proxy",                    dest: "{{ kube_config_dir }}" }
+  - { src: "kubelet.config",           dest: "{{ kube_config_dir }}" }
+  - { src: "kubeconfig",               dest: "{{ kube_config_dir }}" }
+
+start_command:
+  - rm -rf /etc/cni/net.d
+  - nerdctl -n k8s.io load -i /tmp/calico-cni.tar.gz && rm -f /tmp/calico-cni.tar.gz
+  - nerdctl -n k8s.io load -i /tmp/calico-node.tar.gz && rm -f /tmp/calico-node.tar.gz
+  - nerdctl -n k8s.io load -i /tmp/calico-kube-controllers.tar.gz && rm -f /tmp/calico-kube-controllers.tar.gz
+  - ln -sf {{ root_dir }}/etc/systemd/system/kubelet.service /etc/systemd/system
+  - ln -sf {{ root_dir }}/etc/systemd/system/kube-proxy.service /etc/systemd/system
+  - systemctl daemon-reload
+  - systemctl restart containerd
+  - systemctl restart kubelet
+  - systemctl enable kubelet
+  - systemctl restart kube-proxy
+  - systemctl enable kube-proxy
+  - nerdctl -n k8s.io ps | grep calico-node | grep pause | awk '{print $1}' | xargs -r nerdctl -n k8s.io stop
+
+check_app:
+  - systemctl status kubelet
+  - systemctl status kube-proxy

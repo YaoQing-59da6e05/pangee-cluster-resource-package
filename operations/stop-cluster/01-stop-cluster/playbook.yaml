@@ -1,0 +1,11 @@
+- hosts:
+    - kube_control_plane
+  gather_facts: true
+  roles:
+    - role: kube-pre-stop
+      when: inventory_hostname == (groups['kube_control_plane'])[0]
+
+- hosts: kube_node,kube_control_plane,etcd
+  gather_facts: true
+  roles:
+    - kube-node-stop

@@ -1,0 +1,41 @@
+dir_list:
+  - { path: "/etc/chrony",  mode: "0755" }
+
+start_command:
+  - |
+    if [ -x "$(command -v yum)" ]; then
+      yum -y install chrony
+    elif [ -x "$(command -v apt)" ]; then
+      apt -y install chrony
+    else
+      echo -e "Error, unsupported OS." >&2
+      exit 1
+    fi
+
+templates:
+  - { src: "chrony.conf.j2",  dest: "/etc/chrony/chrony.conf",  mode: "0644" }
+
+after_install:
+  - |
+    ln -sf /etc/chrony/chrony.conf /etc
+    if [ "$(systemctl list-units --full -all | grep -Fq chronyd.service; echo $?)" -eq 0 ]; then
+        systemctl restart chronyd
+        systemctl enable chronyd
+    elif [ "$(systemctl list-units --full -all | grep -Fq chrony.service; echo $?)" -eq 0 ]; then
+        systemctl restart chrony
+        systemctl enable chrony
+    else
+        echo "Error, service not found" >&2
+        exit 1
+    fi
+
+check_app:
+  - |
+    if [ "$(systemctl list-units --full -all | grep -Fq chronyd.service; echo $?)" -eq 0 ]; then
+        systemctl status chronyd
+    elif [ "$(systemctl list-units --full -all | grep -Fq chrony.service; echo $?)" -eq 0 ]; then
+        systemctl status chrony
+    else
+        echo "Error, service not found" >&2
+        exit 1
+    fi

@@ -1,0 +1,17 @@
+- name: Check chronyd Status
+  hosts: target
+  gather_facts: false
+  strategy: free
+  tasks:
+    - name: |
+        name: yaml_dir
+        description:
+          en: Check yaml dir
+          zh: 检查 yaml 目录
+      shell: |+
+        ls -al {{ root_dir }}/yaml
+        if [ "x$?" == "x0" ]; then
+          echo "0"
+        else
+          ls -al {{ root_dir }}/kube-exporter.sh
+        fi

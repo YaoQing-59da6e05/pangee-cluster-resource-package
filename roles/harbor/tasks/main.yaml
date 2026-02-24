@@ -1,0 +1,69 @@
+- name: set fact
+  set_fact:
+    "{{ item.var }}": "{{ item.value }}"
+  loop: "{{ set_facts }}"
+  when: set_facts is defined
+
+- name: local shell
+  shell: "{{ item }}"
+  loop: "{{ local_shell }}"
+  loop_control:
+    label: "{{ item }}"
+  when: local_shell is defined
+  delegate_to: localhost
+  run_once: true
+
+- name: Create directories
+  file:
+    path: "{{ item.path }}"
+    mode: "{{ item.mode | default(omit) }}"
+    state: "{{ item.state | default('directory') }}"
+  loop: "{{ dir_list }}"
+  when: dir_list is defined
+
+- name: Copy files
+  copy:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    mode: "{{ item.mode | default(omit) }}"
+  loop: "{{ copy_list }}"
+  when: copy_list is defined
+
+- name: Copy template
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    mode: "{{ item.mode | default(omit) }}"
+  loop: "{{ templates }}"
+  when: templates is defined
+
+- name: Install
+  shell: "{{ item }}"
+  environment:
+    PATH: "{{ root_dir }}/usr/bin:{{ ansible_env.PATH }}"
+  loop: "{{ start_command }}"
+  loop_control:
+    label: "{{ item }}"
+  when: start_command is defined
+
+- name: Block in file with after
+  blockinfile:
+    path: "{{ item.file }}"
+    insertafter: "{{ item.after | default('___impossible_pattern___') }}"
+    marker: "{{ item.marker }}"
+    block: "{{ item.block }}"
+  loop: "{{ block_list_after }}"
+  when: block_list_after is defined
+
+- name: Check application
+  shell: "{{ item }}"
+  environment:
+    PATH: "{{ root_dir }}/usr/bin:{{ ansible_env.PATH }}"
+  loop: "{{ check_app }}"
+  loop_control:
+    label: "{{ item }}"
+  when: check_app is defined
+  register: result
+  until: result.rc == 0
+  retries: "{{ check_app_retries | default('30') | int }}"
+  delay: "{{ check_app_delay | default('1') | int }}"

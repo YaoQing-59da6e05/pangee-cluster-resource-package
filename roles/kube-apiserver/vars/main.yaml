@@ -1,0 +1,41 @@
+set_facts:
+  - { var: "etcd_servers",  value: "{% for item in groups['etcd'] %}https://{{ hostvars[item]['ip'] }}:{{ hostvars[item]['etcd_client_port'] }}{% if not loop.last %},{% endif %}{% endfor %}" }
+
+dir_list:
+  - { path: "{{ kube_ssl_dir }}",           mode: "0755" }
+  - { path: "{{ ansible_env.HOME }}/.kube", mode: "0755" }
+
+copy_list:
+  - { src: "{{ cache_dir }}/kubernetes/kube-apiserver", dest: "{{ root_dir }}/usr/bin",           mode: "0755" }
+  - { src: "{{ cache_dir }}/kubernetes/kubectl",        dest: "{{ root_dir }}/usr/bin",           mode: "0755" }
+  - { src: "{{ certs_dir }}/apiserver.crt",             dest: "{{ kube_ssl_dir }}", mode: "0644" }
+  - { src: "{{ certs_dir }}/apiserver.key",             dest: "{{ kube_ssl_dir }}", mode: "0600" }
+  - { src: "{{ certs_dir }}/ca.crt",                    dest: "{{ kube_ssl_dir }}", mode: "0644" }
+  - { src: "{{ certs_dir }}/ca.key",                    dest: "{{ kube_ssl_dir }}", mode: "0600" }
+  - { src: "{{ certs_dir }}/client.crt",                dest: "{{ kube_ssl_dir }}", mode: "0644" }
+  - { src: "{{ certs_dir }}/client.key",                dest: "{{ kube_ssl_dir }}", mode: "0600" }
+  - { src: "{{ certs_dir }}/etcd_client.crt",           dest: "{{ kube_ssl_dir }}", mode: "0644" }
+  - { src: "{{ certs_dir }}/etcd_client.key",           dest: "{{ kube_ssl_dir }}", mode: "0600" }
+  - { src: "{{ certs_dir }}/front-proxy-ca.crt",        dest: "{{ kube_ssl_dir }}", mode: "0644" }
+  - { src: "{{ certs_dir }}/front-proxy-ca.key",        dest: "{{ kube_ssl_dir }}", mode: "0600" }
+  - { src: "{{ certs_dir }}/front-proxy-client.crt",    dest: "{{ kube_ssl_dir }}", mode: "0644" }
+  - { src: "{{ certs_dir }}/front-proxy-client.key",    dest: "{{ kube_ssl_dir }}", mode: "0600" }
+  - { src: "{{ certs_dir }}/sa.key",                    dest: "{{ kube_ssl_dir }}", mode: "0600" }
+  - { src: "{{ certs_dir }}/sa.pub",                    dest: "{{ kube_ssl_dir }}", mode: "0600" }
+  - { src: "{{ cache_dir }}/coredns.tar.gz",            dest: "/tmp" }
+
+templates:
+  - { src: "apiserver",                      dest: "{{ kube_config_dir }}",               mode: "0644" }
+  - { src: "kubeconfig",                     dest: "{{ kube_config_dir }}",               mode: "0644" }
+  - { src: "kubeconfig",                     dest: "{{ ansible_env.HOME }}/.kube/config", mode: "0644" }
+  - { src: "kube-apiserver.service",         dest: "{{ root_dir }}/etc/systemd/system",   mode: "0644" }
+
+start_command:
+  - ln -sf {{ root_dir }}/etc/systemd/system/kube-apiserver.service /etc/systemd/system
+  - systemctl daemon-reload
+  - systemctl restart kube-apiserver
+  - systemctl enable kube-apiserver
+  - nerdctl -n k8s.io load -i /tmp/coredns.tar.gz && rm -f /tmp/coredns.tar.gz
+
+check_app:
+  - systemctl status kube-apiserver

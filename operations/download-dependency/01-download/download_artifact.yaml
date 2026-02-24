@@ -1,0 +1,15 @@
+- name: Download File
+  loop: "{{ pkg.data.dependency }}"
+  include_tasks: download_file.yaml
+  when: item.artifact.type != 'container_image'
+  vars:
+    temp_directory: "{{ download_temp_dir }}/{{ os }}_{{ arch }}"
+    target_directory: "{{ cache_dir }}/{{ os }}_{{ arch }}"
+
+- name: Download Container Image
+  loop: "{{ pkg.data.dependency }}"
+  include_tasks: download_container_image.yaml
+  when: item.artifact.type == 'container_image'
+  vars:
+    temp_directory: "{{ download_temp_dir }}/{{ os }}_{{ arch }}"
+    target_directory: "{{ cache_dir }}/{{ os }}_{{ arch }}"

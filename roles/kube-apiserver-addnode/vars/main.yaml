@@ -1,0 +1,11 @@
+copy_list:
+  - { src: "{{ certs_dir }}/apiserver.crt",             dest: "{{ kube_ssl_dir }}", mode: "0644" }
+  - { src: "{{ certs_dir }}/apiserver.key",             dest: "{{ kube_ssl_dir }}", mode: "0600" }
+
+start_command:
+  - systemctl daemon-reload
+  - systemctl restart kube-apiserver
+  - systemctl enable kube-apiserver
+
+check_app:
+  - systemctl status kube-apiserver

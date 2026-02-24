@@ -1,0 +1,3 @@
+- name: Display message and variable
+  ansible.builtin.debug:
+    msg: "Hostname is {{ ansible_hostname }}"

@@ -1,0 +1,19 @@
+- name: Check kubernetes Status
+  hosts: kube_control_plane,kube_node
+  gather_facts: false
+  strategy: free
+  tasks:
+    - name: |
+        name: node_status
+        description:
+          en: Check node status
+          zh: 检查 node 状态
+      delegate_to: "{{( groups['kube_control_plane'])[0] }}"
+      shell: |+
+        COUNT=$(kubectl get nodes | grep -c {{ hostvars[inventory_hostname]['ip'] }})
+        if [ "$COUNT" == "0" ]; then
+          echo "0"
+        else
+          kubectl get nodes | grep {{ hostvars[inventory_hostname]['ip'] }}
+        fi
+      when: pangeecluster_node_action is defined and pangeecluster_node_action == 'delete_node'

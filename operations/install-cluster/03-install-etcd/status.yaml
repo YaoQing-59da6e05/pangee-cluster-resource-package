@@ -1,0 +1,41 @@
+- name: Check Etcd Status
+  hosts: etcd
+  gather_facts: false
+  strategy: free
+  tasks:
+    - name: |
+        name: etcd_config
+        description:
+          en: Check etcd.conf config
+          zh: 检查 etcd.conf 配置文件
+      shell: |+
+        test -f /etc/etcd/etcd.conf
+        if [ "x$?" == "x0" ]; then
+          echo "0"
+        else
+          ls /etc/etcd/etcd.conf
+        fi
+    - name: |
+        name: etcd_status
+        description:
+          en: Check etcd status
+          zh: 检查 etcd 服务的状态
+      shell: |+
+        systemctl status etcd | grep "active (running)" > /dev/null
+        if [ "x$?" == "x0" ]; then
+          echo "0"
+        else
+          systemctl status etcd
+        fi
+    - name: |
+        name: etcd_member
+        description:
+          en: Check etcd member
+          zh: 检查 etcd 成员
+      shell: |+
+        ETCDCTL_API=3 etcdctl member list --cacert={{ kube_ssl_dir }}/ca.crt --cert={{ kube_ssl_dir }}/etcd_client.crt --key={{ kube_ssl_dir }}/etcd_client.key --endpoints=https://{{ hostvars[inventory_hostname]['ip'] }}:{{etcd_client_port}} > /dev/null
+        if [ "x$?" == "x0" ]; then
+          echo "0"
+        else
+          ETCDCTL_API=3 etcdctl member list --cacert={{ kube_ssl_dir }}/ca.crt --cert={{ kube_ssl_dir }}/etcd_client.crt --key={{ kube_ssl_dir }}/etcd_client.key --endpoints=https://{{ hostvars[inventory_hostname]['ip'] }}:{{etcd_client_port}}
+        fi

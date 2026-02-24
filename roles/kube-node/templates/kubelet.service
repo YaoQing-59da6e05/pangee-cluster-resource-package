@@ -1,0 +1,13 @@
+[Unit]
+Description=Kubernetes Kubelet Server
+Documentation=https://github.com/GoogleCloudPlatform/kubernetes
+After=containerd.service
+Requires=containerd.service
+
+[Service]
+EnvironmentFile={{ kube_config_dir }}/kubelet
+ExecStart={{ root_dir }}/usr/bin/kubelet $KUBELET_ARGS
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

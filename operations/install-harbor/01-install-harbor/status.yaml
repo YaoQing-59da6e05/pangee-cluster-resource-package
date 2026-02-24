@@ -1,0 +1,17 @@
+- name: Check harbor Status
+  hosts: target
+  gather_facts: false
+  strategy: free
+  tasks:
+    - name: |
+        name: harbor_status
+        description:
+          en: Check harbor status
+          zh: 检查 harbor 服务的状态
+      shell: |+
+        COUNT=$(docker ps | grep Up | grep -c goharbor)
+        if [ "$COUNT" == "11" ]; then
+          echo "0"
+        else
+          docker ps -a | grep goharbor
+        fi

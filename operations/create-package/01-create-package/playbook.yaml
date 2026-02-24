@@ -1,0 +1,18 @@
+- hosts:
+    - localhost
+  gather_facts: true
+  vars_files:
+    - vars/all.yaml
+  tasks:
+    - name: Load package.yaml
+      ansible.builtin.include_vars:
+        file: "{{ package_dir }}/package.yaml"
+        name: pkg
+    - include_tasks: download_artifact.yaml
+      loop:
+        - arm64
+        - amd64
+      loop_control:
+        loop_var: arch
+      vars:
+        os: linux

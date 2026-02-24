@@ -1,0 +1,12 @@
+###
+# kubernetes proxy config
+
+# default config should be adequate
+
+KUBE_PROXY_ARGS="--proxy-mode={{ kube_proxy_mode }} \
+{% if kube_network_dualstack_enabled | default(false) | bool %}
+--cluster-cidr={{ kube_cluster_cidr }},{{ kube_cluster_cidr_ipv6 }} \
+{% else %}
+--cluster-cidr={{ kube_cluster_cidr }} \
+{% endif %}
+--v=0 --kubeconfig={{ kube_config_dir }}/kubeconfig --hostname-override={{ hostvars[inventory_hostname]['ip'] }} --metrics-bind-address={{ hostvars[inventory_hostname]['ip'] }}:{{ kube_proxy_metrics_port }}"

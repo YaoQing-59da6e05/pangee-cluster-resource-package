@@ -1,0 +1,21 @@
+host_cpu_architecture: "{{ 'amd64' if ansible_architecture == 'x86_64' else 'arm64' }}"
+cache_dir: "{{ pangeecluster_resource_package_dir }}/cache/linux_{{ host_cpu_architecture }}"
+certs_dir: "{{ pangeecluster_cluster_dir }}/certs"
+etcd_data_dir: "{{ root_dir }}/etcd_data/etcd"
+kube_dir: "{{ root_dir }}/kubernetes"
+kube_config_dir: "{{ use_versioning_dir_layout | default(false) | ternary(root_dir, '') }}/etc/kubernetes" #FIXME 为了支持在一台机器上安装多个版本的 K8S，考虑将此参数设置为 {{ root_dir }}/etc/kubernetes
+kube_ssl_dir: "{{ use_versioning_dir_layout | default(false) | ternary(root_dir, '') }}/etc/kubernetes/ssl" #FIXME 为了支持在一台机器上安装多个版本的 K8S，考虑将此参数设置为 {{ root_dir }}/etc/kubernetes/ssl
+coredns_ip_suffix: 10
+coredns_ipv6_suffix: a
+kube_ha_dir: "{{ root_dir }}/kube-ha"
+harbor_ha_dir: "{{ root_dir }}/harbor-ha"
+harbor_data_dir: "{{ root_dir }}/harbor_data"
+harbor_dir: "{{ root_dir }}/harbor"
+
+image_base_pause: registry.k8s.io/pause:3.8
+image_base_haproxy: haproxy:2.2
+image_base_keepalived: osixia/keepalived:2.0.20
+image_base_calico_cni: calico/cni:v3.23.2
+image_base_calico_node: calico/node:v3.23.2
+image_base_calico_kube_controllers: calico/kube-controllers:v3.23.2
+image_base_coredns: coredns/coredns:1.7.1

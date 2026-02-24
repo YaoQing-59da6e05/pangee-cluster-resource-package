@@ -1,0 +1,15 @@
+copy_list:
+  - { src: "{{ cache_dir }}/kubernetes/kube-scheduler", dest: "{{ root_dir }}/usr/bin", mode: "0755" }
+
+templates:
+  - { src: "scheduler",               dest: "{{ kube_config_dir }}",              mode: "0644" }
+  - { src: "kube-scheduler.service",  dest: "{{ root_dir }}/etc/systemd/system",  mode: "0644" }
+
+start_command:
+  - ln -sf {{ root_dir }}/etc/systemd/system/kube-scheduler.service /etc/systemd/system
+  - systemctl daemon-reload
+  - systemctl restart kube-scheduler
+  - systemctl enable kube-scheduler
+
+check_app:
+  - systemctl status kube-scheduler

@@ -1,0 +1,31 @@
+- name: Check kubernetes Status
+  hosts: kube_node,kube_control_plane
+  gather_facts: false
+  strategy: free
+  tasks:
+    - name: |
+        name: kubelet_status
+        description:
+          en: Check kubelet status
+          zh: 检查 kubelet 服务的状态
+      shell: |+
+        systemctl status kubelet | grep "inactive (dead)" > /dev/null
+        if [ "x$?" == "x0" ]; then
+          echo "0"
+        else
+          systemctl status kubelet
+        fi
+      when: pangeecluster_node_action is defined and pangeecluster_node_action == 'delete_node'
+    - name: |
+        name: kube-proxy_status
+        description:
+          en: Check kube-proxy status
+          zh: 检查 kube-proxy 服务的状态
+      shell: |+
+        systemctl status kube-proxy | grep "inactive (dead)" > /dev/null
+        if [ "x$?" == "x0" ]; then
+          echo "0"
+        else
+          systemctl status kube-proxy
+        fi
+      when: pangeecluster_node_action is defined and pangeecluster_node_action == 'delete_node'

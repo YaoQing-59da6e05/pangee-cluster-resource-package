@@ -1,0 +1,31 @@
+- name: Check Containerd Status
+  hosts: kube_node,!kube_control_plane
+  gather_facts: false
+  strategy: free
+  tasks:
+    - name: |
+        name: containerd_config
+        description:
+          en: Check config.toml config
+          zh: 检查 config.toml 配置文件
+      shell: |+
+        test -f /etc/containerd/config.toml
+        if [ "x$?" == "x0" ]; then
+          echo "0"
+        else
+          ls /etc/containerd/config.toml
+        fi
+      when: pangeecluster_node_action is defined and pangeecluster_node_action == 'add_node'
+    - name: |
+        name: containerd_status
+        description:
+          en: Check containerd status
+          zh: 检查 containerd 服务的状态
+      shell: |+
+        systemctl status containerd | grep "active (running)" > /dev/null
+        if [ "x$?" == "x0" ]; then
+          echo "0"
+        else
+          systemctl status containerd
+        fi
+      when: pangeecluster_node_action is defined and pangeecluster_node_action == 'add_node'

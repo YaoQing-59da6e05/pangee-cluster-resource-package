@@ -1,0 +1,74 @@
+set_facts:
+  - { var: "half_mem",    value: "{{ ansible_memtotal_mb*1024*1024//2 }}" }
+  - { var: "shmall",      value: "{{ ansible_memtotal_mb*1024*1024//2//(lookup('pipe', 'getconf PAGESIZE') | int) }}" }
+  - { var: "extra_hosts", value: "{{ harbor_extra_hosts | map('split', ':') | map('reverse') | map('join', ' ') | join('\n') }}" }
+
+start_command:
+  - hostnamectl set-hostname {{ inventory_hostname }}
+  - |
+    if [ -x "$(command -v yum)" ]; then
+      yum -y install nfs-utils conntrack iptables libseccomp
+    elif [ -x "$(command -v apt)" ]; then
+      apt -y install nfs-kernel-server conntrack iptables libseccomp2
+    else
+      echo -e "Error, unsupported OS." >&2
+      exit 1
+    fi
+  - systemctl restart nfs-server
+  - systemctl enable nfs-server
+  - modprobe br_netfilter
+  - cp /etc/sysctl.conf /etc/sysctl.conf.bak || true
+  - cp /etc/security/limits.conf /etc/security/limits.conf.bak || true
+  - setenforce 0 || true
+  - sed -i 's/SELINUX=.*/SELINUX=disabled/g' /etc/sysconfig/selinux || true
+  - sed -i 's/SELINUX=.*/SELINUX=disabled/g' /etc/selinux/config || true
+  - systemctl stop firewalld && systemctl disable firewalld || true
+  - sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab || true
+  - swapoff -a || true
+  - mkdir -p {{ root_dir }}/usr/bin
+  - mkdir -p {{ root_dir }}/etc/systemd/system
+
+kernel_option:
+  - { name: "kernel.shmmax", value: "{{half_mem}}" }
+  - { name: "kernel.shmall", value: "{{shmall}}" }
+  - { name: "kernel.shmmni", value: "4096" }
+  - { name: "kernel.pid_max", value: "65535" }
+  - { name: "net.ipv4.neigh.default.gc_thresh1", value: "4096" }
+  - { name: "net.ipv4.neigh.default.gc_thresh2", value: "8192" }
+  - { name: "net.ipv4.neigh.default.gc_thresh3", value: "10240" }
+  - { name: "kernel.sem", value: "250 6400000 1000 25600" }
+  - { name: "fs.aio-max-nr", value: "1048576" }
+  - { name: "fs.file-max", value: "6815744" }
+  - { name: "net.ipv4.ip_local_port_range", value: "33000 65500" }
+  - { name: "net.core.rmem_default", value: "262144" }
+  - { name: "net.core.rmem_max", value: "4194304" }
+  - { name: "net.core.wmem_default", value: "262144" }
+  - { name: "net.core.wmem_max", value: "1048586" }
+  - { name: "net.ipv4.ip_forward", value: "1" }
+  - { name: "net.bridge.bridge-nf-call-iptables", value: "1" }
+  - { name: "net.bridge.bridge-nf-call-ip6tables", value: "1" }
+
+limits_list:
+  - { dest: '/etc/security/limits.conf', domain: '*', limit_type: 'soft', limit_item: 'nofile',  value: '65536' }
+  - { dest: '/etc/security/limits.conf', domain: '*', limit_type: 'hard', limit_item: 'nofile',  value: '65536' }
+  - { dest: '/etc/security/limits.conf', domain: '*', limit_type: 'soft', limit_item: 'nproc',   value: '163840' }
+  - { dest: '/etc/security/limits.conf', domain: '*', limit_type: 'hard', limit_item: 'nproc',   value: '163840' }
+  - { dest: '/etc/security/limits.conf', domain: '*', limit_type: 'soft', limit_item: 'stack',   value: '20480' }
+  - { dest: '/etc/security/limits.conf', domain: '*', limit_type: 'hard', limit_item: 'stack',   value: '20480' }
+  - { dest: '/etc/security/limits.conf', domain: '*', limit_type: 'soft', limit_item: 'memlock', value: '16808996864' }
+  - { dest: '/etc/security/limits.conf', domain: '*', limit_type: 'hard', limit_item: 'memlock', value: '16808996864' }
+
+line_list:
+  - { file: "/etc/systemd/system.conf", line: "DefaultLimitNOFILE=65536" }
+  - { file: "/etc/systemd/system.conf", line: "DefaultLimitNPROC=163840" }
+  - { file: "/etc/systemd/system.conf", line: "DefaultLimitMEMLOCK=16808996864" }
+  - { file: "/etc/systemd/system.conf", line: "DefaultLimitCORE=infinity" }
+  - { file: "/etc/profile.d/sh.local",  line: "alias k=kubectl" }
+  - { file: "/etc/profile.d/sh.local",  line: "export PATH={{ root_dir }}/usr/bin:$PATH" }
+  - { file: "/etc/profile.d/sh.local",  line: "export KUBECONFIG={{ kube_config_dir }}/kubeconfig" }
+  - { file: "{{ ansible_env.HOME }}/.bashrc",  line: "alias k=kubectl" }
+  - { file: "{{ ansible_env.HOME }}/.bashrc",  line: "export PATH={{ root_dir }}/usr/bin:$PATH" }
+  - { file: "{{ ansible_env.HOME }}/.bashrc",  line: "export KUBECONFIG={{ kube_config_dir }}/kubeconfig" }
+
+block_list:
+  - { file: "/etc/hosts", marker: "#{mark} harbor_extra_hosts", block: "{{ extra_hosts }}" }

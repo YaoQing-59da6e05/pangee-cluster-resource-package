@@ -1,0 +1,6 @@
+- hosts:
+    - etcd
+  gather_facts: true
+  roles:
+    - certs
+    - etcd

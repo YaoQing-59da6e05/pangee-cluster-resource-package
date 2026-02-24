@@ -1,0 +1,29 @@
+- name: Check chronyd Status
+  hosts: target
+  gather_facts: false
+  strategy: free
+  tasks:
+    - name: |
+        name: chrony_config
+        description:
+          en: Check chrony config
+          zh: 检查 chrony 配置文件
+      shell: |+
+        test -f /etc/chrony/chrony.conf
+        if [ "x$?" == "x0" ]; then
+          echo "0"
+        else
+          ls /etc/chrony/chrony.conf
+        fi
+    - name: |
+        name: chronyd_status
+        description:
+          en: Check chronyd status
+          zh: 检查 chronyd 服务的状态
+      shell: |+
+        systemctl status chronyd | grep "active (running)" > /dev/null
+        if [ "x$?" == "x0" ]; then
+          echo "0"
+        else
+          systemctl status chronyd
+        fi

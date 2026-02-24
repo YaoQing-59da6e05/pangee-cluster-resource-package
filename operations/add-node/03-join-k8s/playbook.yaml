@@ -1,0 +1,51 @@
+- hosts: kube_node,!kube_control_plane
+  gather_facts: false
+  tasks:
+    - name: Group add_node
+      group_by:
+        key: "add_node"
+      when: pangeecluster_node_action is defined and pangeecluster_node_action == 'add_node'
+
+- hosts:
+    - add_node
+  gather_facts: true
+  roles:
+    - kube-node
+
+- hosts: kube_control_plane
+  gather_facts: false
+  tasks:
+    - name: Group add_control_plane
+      group_by:
+        key: "add_control_plane"
+      when: pangeecluster_node_action is defined and pangeecluster_node_action == 'add_node'
+
+- hosts:
+    - add_control_plane
+  gather_facts: true
+  roles:
+    - certs-apiserver-addnode
+    - kube-apiserver
+    - kube-controller-manager
+    - kube-scheduler
+
+- hosts:
+    - kube_control_plane
+  gather_facts: true
+  roles:
+    - role: kube-ha
+      when: groups['add_control_plane'] | default([]) | length > 0
+
+- hosts:
+    - add_control_plane
+  gather_facts: true
+  roles:
+    - kube-node
+    - kube-label
+
+- hosts:
+    - kube_control_plane,!add_control_plane
+  gather_facts: true
+  roles:
+    - role: kube-apiserver-addnode
+      when: groups['add_control_plane'] | default([]) | length > 0

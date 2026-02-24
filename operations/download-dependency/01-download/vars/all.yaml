@@ -1,0 +1,3 @@
+package_dir: ../../..
+download_temp_dir: "{{ package_dir }}/temp"
+cache_dir: "{{ package_dir }}/cache"

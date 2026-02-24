@@ -1,0 +1,20 @@
+set_facts:
+  - { var: "coredns_ip",  value: "{{ kube_service_cidr.split('.')[0] }}.{{ kube_service_cidr.split('.')[1] }}.{{ kube_service_cidr.split('.')[2] }}.{{ coredns_ip_suffix }}" }
+
+start_command:
+  - |
+    if [ -f /etc/resolv.conf ]; then
+        chattr -i /etc/resolv.conf
+    else
+        touch /etc/resolv.conf
+    fi
+
+block_list_before:
+  - { file: "/etc/resolv.conf", marker: "#{mark} coredns", block: "nameserver {{ coredns_ip }}", before: "^nameserver" }
+
+line_list:
+  - { file: "/etc/resolv.conf", line: "search svc.cluster.local cluster.local" }
+  - { file: "/etc/resolv.conf", line: "options ndots:5" }
+
+after_install:
+  - chattr +i /etc/resolv.conf

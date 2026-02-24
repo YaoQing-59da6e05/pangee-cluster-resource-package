@@ -1,0 +1,6 @@
+set_facts:
+  - { var: "delete_nodes",  value: "{% for item in groups['delete_node'] %}{{ hostvars[item]['ip'] }}{% if not loop.last %} {% endif %}{% endfor %}" }
+
+start_command:
+  - kubectl get nodes {{ delete_nodes }} && kubectl drain {{ delete_nodes }} --ignore-daemonsets --delete-local-data --disable-eviction --force || true
+  - kubectl get nodes {{ delete_nodes }} && kubectl delete nodes {{ delete_nodes }} || true

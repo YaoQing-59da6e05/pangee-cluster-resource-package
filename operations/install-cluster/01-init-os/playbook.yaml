@@ -1,0 +1,7 @@
+- hosts:
+    - kube_control_plane
+    - kube_node
+  gather_facts: true
+  roles:
+    - init-os
+    - chrony

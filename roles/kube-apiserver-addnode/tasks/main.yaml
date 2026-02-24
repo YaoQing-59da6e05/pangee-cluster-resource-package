@@ -1,0 +1,29 @@
+- name: Copy files
+  copy:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    mode: "{{ item.mode | default(omit) }}"
+  loop: "{{ copy_list }}"
+  when: copy_list is defined
+
+- name: Install
+  shell: "{{ item }}"
+  environment:
+    PATH: "{{ root_dir }}/usr/bin:{{ ansible_env.PATH }}"
+  loop: "{{ start_command }}"
+  loop_control:
+    label: "{{ item }}"
+  when: start_command is defined
+
+- name: Check application
+  shell: "{{ item }}"
+  environment:
+    PATH: "{{ root_dir }}/usr/bin:{{ ansible_env.PATH }}"
+  loop: "{{ check_app }}"
+  loop_control:
+    label: "{{ item }}"
+  when: check_app is defined
+  register: result
+  until: result.rc == 0
+  retries: "{{ check_app_retries | default('30') | int }}"
+  delay: "{{ check_app_delay | default('1') | int }}"

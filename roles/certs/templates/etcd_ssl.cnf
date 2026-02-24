@@ -1,0 +1,29 @@
+[ req ]
+req_extensions = v3_req
+distinguished_name = req_distinguished_name
+[req_distinguished_name]
+[ v3_req ]
+basicConstraints = CA:FALSE
+keyUsage = nonRepudiation, digitalSignature, keyEncipherment
+extendedKeyUsage = serverAuth,clientAuth
+subjectAltName = @alt_names
+[alt_names]
+DNS.1 = localhost
+{% for item in groups['etcd'] %}
+{% set num=loop.index %}
+DNS.{{num+1}} = {{ item }}
+{% endfor %}
+{% set ips = [] %}
+{% set _ = ips.append('127.0.0.1') %}
+{% for item in groups['etcd'] %}
+{% set _ = ips.append(hostvars[item]['ip']) %}
+{% endfor %}
+{% if kube_network_dualstack_enabled | default(false) | bool %}
+{% set _ = ips.append('::1') %}
+{% for item in groups['etcd'] %}
+{% set _ = ips.append(hostvars[item]['ipv6']) %}
+{% endfor %}
+{% endif %}
+{% for ip in ips %}
+IP.{{ loop.index }} = {{ ip }}
+{% endfor %}

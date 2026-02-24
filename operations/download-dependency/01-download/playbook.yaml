@@ -1,0 +1,30 @@
+- hosts:
+    - localhost
+  gather_facts: true
+  vars_files:
+    - vars/all.yaml
+  tasks:
+    - name: Display message and variable
+      ansible.builtin.debug:
+        msg:
+          - "default_retries          : {{ default_retries }}"
+          - "download_architecture    : {{ download_architecture }}"
+          - "enable_proxy_on_download : {{ enable_proxy_on_download }}"
+          - "http_proxy               : {{ http_proxy }}"
+          - "https_proxy              : {{ https_proxy }}"
+    - name: Load package.yaml
+      ansible.builtin.include_vars:
+        file: "{{ package_dir }}/package.yaml"
+        name: pkg
+    - include_tasks: download_artifact.yaml
+      vars:
+        os: linux
+        arch: arm64
+      when:
+        - download_architecture is not defined or "arm64" in download_architecture
+    - include_tasks: download_artifact.yaml
+      vars:
+        os: linux
+        arch: amd64
+      when:
+        - download_architecture is not defined or "amd64" in download_architecture

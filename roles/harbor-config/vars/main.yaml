@@ -1,0 +1,10 @@
+templates:
+  - { src: "config.toml", dest: "{{ root_dir }}/etc/containerd",  mode: "0644" }
+
+start_command:
+  - "systemctl restart containerd{% if inventory_hostname in groups['kube_control_plane'] or inventory_hostname in groups['kube_node'] %} && systemctl restart kubelet{% endif %}{% if inventory_hostname in groups['harbor'] %} && chown $(stat -c %u:%g {{ harbor_data_dir }}/secret/keys/secretkey) /tmp/secretkey && /bin/mv -f /tmp/secretkey {{ harbor_data_dir }}/secret/keys && chown $(stat -c %u:%g {{ harbor_data_dir }}/secret/core/private_key.pem) /tmp/private_key.pem && /bin/mv -f /tmp/private_key.pem {{ harbor_data_dir }}/secret/core && systemctl restart harbor{% endif %}"
+
+check_app:
+  - "systemctl status containerd{% if inventory_hostname in groups['kube_control_plane'] or inventory_hostname in groups['kube_node'] %} && systemctl status kubelet{% endif %}{% if inventory_hostname in groups['harbor'] %} && systemctl status harbor && [ $(docker ps | grep goharbor | grep Up | grep -c healthy) -ge 10 ]{% endif %}"
+
+check_app_delay: 10

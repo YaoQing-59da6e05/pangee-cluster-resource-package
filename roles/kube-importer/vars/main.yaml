@@ -1,0 +1,2 @@
+start_command:
+  - kubectl apply -f {{ root_dir }}/yaml

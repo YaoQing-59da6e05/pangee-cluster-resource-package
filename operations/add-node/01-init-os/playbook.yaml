@@ -1,0 +1,14 @@
+- hosts: kube_control_plane,kube_node
+  gather_facts: false
+  tasks:
+    - name: Group add_node
+      group_by:
+        key: "add_node"
+      when: pangeecluster_node_action is defined and pangeecluster_node_action == 'add_node'
+
+- hosts:
+    - add_node
+  gather_facts: true
+  roles:
+    - init-os
+    - chrony

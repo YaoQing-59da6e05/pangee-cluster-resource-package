@@ -1,0 +1,33 @@
+set_facts:
+  - { var: "etcd_initial_cluster",  value: "{% for item in groups['etcd'] %}etcd_{{ item }}=https://{{ hostvars[item]['ip'] }}:{{ etcd_peer_port }}{% if not loop.last %},{% endif %}{% endfor %}" }
+
+dir_list:
+  - { path: "{{ root_dir }}/etc/etcd",  mode: "0755" }
+  - { path: "/etc/etcd",                mode: "0755" }
+  - { path: "{{ etcd_data_dir }}",      mode: "0755" }
+  - { path: "{{ kube_ssl_dir }}",       mode: "0755" }
+
+copy_list:
+  - { src: "{{ cache_dir }}/etcd/etcd",       dest: "{{ root_dir }}/usr/bin", mode: "0755" }
+  - { src: "{{ cache_dir }}/etcd/etcdctl",    dest: "{{ root_dir }}/usr/bin", mode: "0755" }
+  - { src: "{{ certs_dir }}/ca.crt",          dest: "{{ kube_ssl_dir }}",     mode: "0644" }
+  - { src: "{{ certs_dir }}/ca.key",          dest: "{{ kube_ssl_dir }}",     mode: "0600" }
+  - { src: "{{ certs_dir }}/etcd_server.crt", dest: "{{ kube_ssl_dir }}",     mode: "0644" }
+  - { src: "{{ certs_dir }}/etcd_server.key", dest: "{{ kube_ssl_dir }}",     mode: "0600" }
+  - { src: "{{ certs_dir }}/etcd_client.crt", dest: "{{ kube_ssl_dir }}",     mode: "0644" }
+  - { src: "{{ certs_dir }}/etcd_client.key", dest: "{{ kube_ssl_dir }}",     mode: "0600" }
+
+templates:
+  - { src: "etcd.conf",       dest: "{{ root_dir }}/etc/etcd",                        mode: "0644" }
+  - { src: "etcd.service.j2", dest: "{{ root_dir }}/etc/systemd/system/etcd.service", mode: "0644" }
+
+start_command:
+  - rm -rf {{ etcd_data_dir }}/*
+  - ln -sf {{ root_dir }}/etc/systemd/system/etcd.service /etc/systemd/system
+  - ln -sf {{ root_dir }}/etc/etcd/etcd.conf /etc/etcd
+  - systemctl daemon-reload
+  - systemctl restart etcd
+  - systemctl enable etcd
+
+check_app:
+  - systemctl status etcd

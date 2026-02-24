@@ -1,0 +1,75 @@
+apiVersion: audit.k8s.io/v1
+kind: Policy
+rules:
+  # core
+  - level: Metadata
+    verbs: [ "delete","deletecollection","create","patch","update" ]
+    resources:
+      - group: ""
+        resources: [ "pods","configmaps","endpoints","secrets","services","serviceaccounts","persistentvolumeclaims","nodes","namespaces","limitranges","resourcequotas" ]
+  # apps
+  - level: Metadata
+    verbs: [ "delete","deletecollection","create","patch","update" ]
+    resources:
+      - group: "apps"
+        resources: [ "deployments","daemonsets","statefulsets" ]
+  # batch
+  - level: Metadata
+    verbs: [ "delete","deletecollection","create","patch","update" ]
+    resources:
+      - group: "batch"
+        resources: [ "jobs","cronjobs" ]
+  # autoscaling
+  - level: Metadata
+    verbs: [ "delete","deletecollection","create","patch","update" ]
+    resources:
+      - group: "autoscaling"
+        resources: [ "horizontalpodautoscalers" ]
+  # networking.k8s.io 
+  - level: Metadata
+    verbs: [ "delete","deletecollection","create","patch","update" ]
+    resources:
+      - group: "networking.k8s.io"
+        resources: [ "ingresses","networkpolicies" ]
+  # scheduling.k8s.io
+  - level: Metadata
+    verbs: [ "delete","deletecollection","create","patch","update" ]
+    resources:
+      - group: "scheduling.k8s.io"
+        resources: [ "priorityclasses" ]
+  # storage.k8s.io
+  - level: Metadata
+    verbs: [ "delete","deletecollection","create","patch","update" ]
+    resources:
+      - group: "storage.k8s.io"
+        resources: [ "storageclasses" ]
+  # apiextensions.k8s.io
+  - level: Metadata
+    verbs: [ "delete","deletecollection","create","patch","update" ]
+    resources:
+      - group: "apiextensions.k8s.io"
+        resources: [ "customresourcedefinitions" ]
+  # apiregistration.k8s.io
+  - level: Metadata
+    verbs: [ "delete","deletecollection","create","patch","update" ]
+    resources:
+      - group: "apiregistration.k8s.io"
+        resources: [ "apiservices" ]
+  # apps.kruise.io
+  - level: Metadata
+    verbs: [ "delete","deletecollection","create","patch","update" ]
+    resources:
+      - group: "apps.kruise.io"
+        resources: [ "clonesets" ]
+  # keda.sh
+  - level: Metadata
+    verbs: [ "delete","deletecollection","create","patch","update" ]
+    resources:
+      - group: "keda.sh"
+        resources: [ "scaledobjects" ]
+  # networking.istio.io
+  - level: Metadata
+    verbs: [ "delete","deletecollection","create","patch","update" ]
+    resources:
+      - group: "networking.istio.io"
+        resources: [ "virtualservices","gateways" ]

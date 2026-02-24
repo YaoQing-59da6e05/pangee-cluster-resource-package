@@ -1,0 +1,14 @@
+set_facts:
+  - { var: "harbor1_url",       value: "{{ hostvars[groups['harbor'][0]]['ip'] }}:{{ hostvars[groups['harbor'][0]]['harbor_vip_port'] }}" }
+  - { var: "harbor1_user",      value: "admin" }
+  - { var: "harbor1_password",  value: "{{ hostvars[groups['harbor'][0]]['harbor_admin_password'] }}" }
+  - { var: "harbor2_url",       value: "{{ hostvars[groups['harbor'][1]]['ip'] }}:{{ hostvars[groups['harbor'][1]]['harbor_vip_port'] }}" }
+  - { var: "harbor2_user",      value: "admin" }
+  - { var: "harbor2_password",  value: "{{ hostvars[groups['harbor'][1]]['harbor_admin_password'] }}" }
+
+copy_list:
+  - { src: "harborMasterSlave.sh",  dest: "/tmp", mode: "0755" }
+  - { src: "{{ cache_dir }}/yq",    dest: "/tmp", mode: "0755" }
+
+local_shell:
+  - /tmp/harborMasterSlave.sh {{ harbor1_url }} {{ harbor1_user }} {{ harbor1_password }} {{ harbor2_url }} {{ harbor2_user }} {{ harbor2_password }}

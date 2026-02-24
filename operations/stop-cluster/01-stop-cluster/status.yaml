@@ -1,0 +1,17 @@
+- name: Check kubernetes Status
+  hosts: kube_control_plane,kube_node
+  gather_facts: false
+  strategy: free
+  tasks:
+    - name: |
+        name: kube_status
+        description:
+          en: Check kube status
+          zh: 检查 kube 状态
+      shell: |+
+        COUNT=$(ps -ef | grep -v grep | grep kube | grep -c {{ root_dir }})
+        if [ "$COUNT" == "0" ]; then
+          echo "0"
+        else
+          ps -ef | grep -v grep | grep kube | grep {{ root_dir }}
+        fi

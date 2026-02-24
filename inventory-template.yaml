@@ -1,0 +1,63 @@
+all:
+  vars:
+    bin_dir: /usr/local/bin
+    ansible_ssh_pipelining: true
+    ansible_python_interpreter: auto
+    ansible_user: root
+    ansible_port: "22"
+  hosts:
+    localhost:
+      ansible_connection: local
+      ansible_python_interpreter: /usr/bin/python3
+      pangeecluster_resource_package: PANGEECLUSTER_RESOURCE_PACKAGE
+  children:
+    target:
+      vars:
+        kube_network_dualstack_enabled: false
+        kube_network_prefer_ipv6: false
+        kube_apiserver_vip:
+        kube_apiserver_vip_ipv6:
+        kube_apiserver_vip_port: 16443 # haproxy代理apiserver安全端口，如果使用F5，F5需要提前配置好listen 16443 后端 6443
+        kube_apiserver_port: 6443
+        root_dir: /opt/k8s1.28
+        use_versioning_dir_layout: true
+        cri_containerd_insecure_registries: [] # 完成安装后，应该自动设置 containerd 的对应参数
+        harbor_extra_hosts: [] # 配置在harbor容器中以及k8s节点上额外的域名解析地址，格式为"域名:IP地址"，可为空列表
+        ntp_server:
+          - ntp.aliyun.com
+          - ntp.cloud.aliyuncs.com
+      children:
+        etcd:
+          hosts: {}
+          vars:
+            etcd_initial_cluster_token: GENERATE_UUID_PLACEHOLDER
+            etcd_client_port: 2379
+            etcd_peer_port: 2380
+        harbor:
+          hosts: {}
+          vars:
+            # harbor_vip: # Harbor 的虚拟IP地址，如果不存在，则说明 harbor section 未启用
+            harbor_vip_ipv6:
+            harbor_vip_port: 1180
+            harbor_admin_password: GENERATE_PASSWORD_PLACEHOLDER # 现有脚本将 harbor_admin_password 设置到 containerd 的 toml 文件中，存在过度授权的问题。
+            harbor_db_password: GENERATE_PASSWORD_PLACEHOLDER
+            harbor_metrics_port: 9090
+            harbor_projects: kube_system # 需要创建的project，以英文逗号隔开
+        k8s_cluster:
+          children:
+            kube_control_plane:
+              hosts: {}
+            kube_node:
+              hosts: {}
+            calico_rr:
+              hosts: {}
+          vars:
+            calico_ippool_vxlan: CrossSubnet
+            kube_cluster_cidr: 10.244.0.0/16
+            kube_cluster_cidr_ipv6: 2001:db8:1::/64
+            kube_service_cidr: 10.96.0.0/16
+            kube_service_cidr_ipv6: 2001:db8::/112
+            kube_service_nodeport_range: 30000-32767
+            kube_proxy_mode: iptables # 现有脚本不支持 ipvs
+            kube_proxy_metrics_port: 10249
+            kube_cluster_domain: cluster.local

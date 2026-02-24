@@ -1,0 +1,25 @@
+# The following values are used to configure the kubernetes controller-manager
+
+# defaults from config and apiserver should be adequate
+
+# Add your own!
+KUBE_CONTROLLER_MANAGER_ARGS="--leader-elect=true --service-account-private-key-file={{ kube_ssl_dir }}/sa.key \
+{% if kube_network_dualstack_enabled | default(false) | bool %}
+--service-cluster-ip-range={{ kube_service_cidr }},{{ kube_service_cidr_ipv6 }} \
+{% else %}
+--service-cluster-ip-range={{ kube_service_cidr }} \
+{% endif %}
+{% if kube_network_dualstack_enabled | default(false) | bool %}
+--cluster-cidr={{ kube_cluster_cidr }},{{ kube_cluster_cidr_ipv6 }} \
+{% else %}
+--cluster-cidr={{ kube_cluster_cidr }} \
+{% endif %}
+--root-ca-file={{ kube_ssl_dir }}/ca.crt --v=0 \
+--tls-cipher-suites=TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_128_GCM_SHA256 \
+--node-monitor-grace-period=40s \
+--node-monitor-period=5s \
+--kubeconfig={{ kube_config_dir }}/kubeconfig \
+--authorization-kubeconfig={{ kube_config_dir }}/kubeconfig \
+--authentication-kubeconfig={{ kube_config_dir }}/kubeconfig \
+--horizontal-pod-autoscaler-sync-period=15s \
+--horizontal-pod-autoscaler-downscale-stabilization=5m0s"

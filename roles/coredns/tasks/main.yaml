@@ -1,0 +1,36 @@
+- name: set fact
+  set_fact:
+    "{{ item.var }}": "{{ item.value }}"
+  loop: "{{ set_facts }}"
+  when: set_facts is defined
+
+- name: Copy template
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    mode: "{{ item.mode | default(omit) }}"
+  loop: "{{ templates }}"
+  when: templates is defined
+
+- name: Install
+  shell: "{{ item }}"
+  environment:
+    PATH: "{{ root_dir }}/usr/bin:{{ ansible_env.PATH }}"
+  loop: "{{ start_command }}"
+  loop_control:
+    label: "{{ item }}"
+  when: start_command is defined
+  run_once: true
+
+- name: Check application
+  shell: "{{ item }}"
+  environment:
+    PATH: "{{ root_dir }}/usr/bin:{{ ansible_env.PATH }}"
+  loop: "{{ check_app }}"
+  loop_control:
+    label: "{{ item }}"
+  when: check_app is defined
+  register: result
+  until: result.rc == 0
+  retries: "{{ check_app_retries | default('30') | int }}"
+  delay: "{{ check_app_delay | default('1') | int }}"

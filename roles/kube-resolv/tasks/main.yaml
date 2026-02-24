@@ -1,0 +1,42 @@
+- name: set fact
+  set_fact:
+    "{{ item.var }}": "{{ item.value }}"
+  loop: "{{ set_facts }}"
+  when: set_facts is defined
+
+- name: Install
+  shell: "{{ item }}"
+  environment:
+    PATH: "{{ root_dir }}/usr/bin:{{ ansible_env.PATH }}"
+  loop: "{{ start_command }}"
+  loop_control:
+    label: "{{ item }}"
+  when: start_command is defined
+
+- name: Block in file with before
+  blockinfile:
+    path: "{{ item.file }}"
+    insertbefore: "{{ item.before | default('___impossible_pattern___') }}"
+    marker: "{{ item.marker }}"
+    block: "{{ item.block }}"
+  loop: "{{ block_list_before }}"
+  when: block_list_before is defined
+
+- name: Line in file
+  lineinfile:
+    dest: "{{ item.file }}"
+    regexp: "{{ item.regexp | default('___impossible_pattern___') }}"
+    line: "{{ item.line | default(None) }}"
+    state: "{{ item.state | default('present') }}"
+  loop: "{{ line_list }}"
+  when: line_list is defined
+
+- name: After install
+  shell: "{{ item }}"
+  environment:
+    PATH: "{{ root_dir }}/usr/bin:{{ ansible_env.PATH }}"
+  loop: "{{ after_install }}"
+  loop_control:
+    label: "{{ item }}"
+  when: after_install is defined
+  run_once: true

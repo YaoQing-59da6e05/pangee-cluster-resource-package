@@ -1,0 +1,23 @@
+start_command:
+  - |
+    systemctl daemon-reload \
+    {% if inventory_hostname in groups['kube_control_plane'] or inventory_hostname in groups['kube_node']%}
+    && systemctl stop containerd \
+    && systemctl disable containerd \
+    && systemctl stop kubelet \
+    && systemctl disable kubelet \
+    && systemctl stop kube-proxy \
+    && systemctl disable kube-proxy \
+    {% endif %}
+    {% if inventory_hostname in groups['kube_control_plane'] %}
+    && systemctl stop kube-apiserver \
+    && systemctl disable kube-apiserver \
+    && systemctl stop kube-controller-manager \
+    && systemctl disable kube-controller-manager \
+    && systemctl stop kube-scheduler \
+    && systemctl disable kube-scheduler \
+    {% endif %}
+    {% if inventory_hostname in groups['etcd'] %}
+    && systemctl stop etcd \
+    && systemctl disable etcd \
+    {% endif %}

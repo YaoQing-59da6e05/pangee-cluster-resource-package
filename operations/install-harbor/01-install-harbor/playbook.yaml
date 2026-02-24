@@ -1,0 +1,37 @@
+- hosts: harbor
+  gather_facts: false
+  tasks:
+    - name: Group init_node
+      group_by:
+        key: "init_node"
+      when: inventory_hostname not in groups['kube_control_plane'] and inventory_hostname not in groups['kube_node']
+
+- hosts:
+    - init_node
+  gather_facts: true
+  roles:
+    - init-os
+    - chrony
+    - containerd
+
+- hosts:
+    - harbor
+  gather_facts: true
+  roles:
+    - docker-compose
+    - harbor-ha
+    - harbor
+
+- hosts:
+    - kube_control_plane
+    - kube_node
+    - harbor
+  gather_facts: true
+  roles:
+    - harbor-config
+
+- hosts:
+    - harbor
+  gather_facts: true
+  roles:
+    - harbor-replication

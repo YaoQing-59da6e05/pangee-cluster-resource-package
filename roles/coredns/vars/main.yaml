@@ -1,0 +1,16 @@
+set_facts:
+  - { var: "etcd_servers",  value: "{% for item in groups['etcd'] %}https://{{ hostvars[item]['ip'] }}:{{ hostvars[item]['etcd_client_port'] }}{% if not loop.last %},{% endif %}{% endfor %}" }
+  - { var: "coredns_ip",    value: "{{ kube_service_cidr.split('.')[0] }}.{{ kube_service_cidr.split('.')[1] }}.{{ kube_service_cidr.split('.')[2] }}.{{ coredns_ip_suffix }}" }
+  - { var: "coredns_ipv6",  value: "{{ kube_service_cidr_ipv6.split('/')[0] }}{{ coredns_ipv6_suffix }}" }
+  - { var: "extra_hosts",   value: "{{ harbor_extra_hosts | map('split', ':') | map('reverse') | map('join', ' ') }}" }
+
+templates:
+  - { src: "coredns-v1.7.0-with-etcd.yaml", dest: "/tmp" }
+
+start_command:
+  - kubectl -n kube-system get cm etcd-cert || kubectl create configmap etcd-cert -n kube-system --from-file=ca.crt={{ kube_ssl_dir }}/ca.crt --from-file=etcd_client.crt={{ kube_ssl_dir }}/etcd_client.crt --from-file=etcd_client.key={{ kube_ssl_dir }}/etcd_client.key
+  - kubectl delete -f /tmp/coredns-v1.7.0-with-etcd.yaml || true
+  - kubectl apply -f /tmp/coredns-v1.7.0-with-etcd.yaml &&  rm -f /tmp/coredns-v1.7.0-with-etcd.yaml
+
+check_app:
+  - kubectl get pod -n kube-system | grep coredns | grep Running

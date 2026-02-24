@@ -1,0 +1,24 @@
+- name: set fact
+  set_fact:
+    "{{ item.var }}": "{{ item.value }}"
+  loop: "{{ set_facts }}"
+  when: set_facts is defined
+  run_once: true
+
+- name: local template
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+  loop: "{{ local_template }}"
+  when: local_template is defined
+  delegate_to: localhost
+  run_once: true
+
+- name: local shell
+  shell: "{{ item }}"
+  loop: "{{ local_shell }}"
+  loop_control:
+    label: "{{ item }}"
+  when: local_shell is defined
+  delegate_to: localhost
+  run_once: true

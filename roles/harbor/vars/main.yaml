@@ -1,0 +1,81 @@
+set_facts:
+  - { var: "extra_hosts", value: "{{ groups['harbor'] | zip(groups['harbor'] | map('extract', hostvars, 'ip')) | map('join', ':') | union(harbor_extra_hosts | default([])) }}" }
+
+local_shell:
+  - openssl genrsa -out /tmp/private_key.pem 4096
+  - grep 'BEGIN RSA PRIVATE KEY' /tmp/private_key.pem || openssl genrsa -traditional -out /tmp/private_key.pem 4096
+  - openssl rand -base64 32 | tr -dc 'A-Za-z0-9' | head -c16 > /tmp/secretkey
+
+dir_list:
+  - { path: "{{ harbor_dir }}", mode: "0755" }
+
+copy_list:
+  - { src: "common.sh",                                             dest: "{{ harbor_dir }}", mode: "0755" }
+  - { src: "install.sh",                                            dest: "{{ harbor_dir }}", mode: "0755" }
+  - { src: "prepare",                                               dest: "{{ harbor_dir }}", mode: "0755" }
+  - { src: "LICENSE",                                               dest: "{{ harbor_dir }}", mode: "0644" }
+  - { src: "/tmp/secretkey",                                        dest: "/tmp",             mode: "0600" }
+  - { src: "/tmp/private_key.pem",                                  dest: "/tmp",             mode: "0600" }
+  - { src: "{{ cache_dir }}/goharbor-chartmuseum-photon.tar.gz",    dest: "/tmp" }
+  - { src: "{{ cache_dir }}/goharbor-harbor-core.tar.gz",           dest: "/tmp" }
+  - { src: "{{ cache_dir }}/goharbor-harbor-db.tar.gz",             dest: "/tmp" }
+  - { src: "{{ cache_dir }}/goharbor-harbor-exporter.tar.gz",       dest: "/tmp" }
+  - { src: "{{ cache_dir }}/goharbor-harbor-jobservice.tar.gz",     dest: "/tmp" }
+  - { src: "{{ cache_dir }}/goharbor-harbor-log.tar.gz",            dest: "/tmp" }
+  - { src: "{{ cache_dir }}/goharbor-harbor-portal.tar.gz",         dest: "/tmp" }
+  - { src: "{{ cache_dir }}/goharbor-harbor-registryctl.tar.gz",    dest: "/tmp" }
+  - { src: "{{ cache_dir }}/goharbor-nginx-photon.tar.gz",          dest: "/tmp" }
+  - { src: "{{ cache_dir }}/goharbor-notary-server-photon.tar.gz",  dest: "/tmp" }
+  - { src: "{{ cache_dir }}/goharbor-notary-signer-photon.tar.gz",  dest: "/tmp" }
+  - { src: "{{ cache_dir }}/goharbor-prepare.tar.gz",               dest: "/tmp" }
+  - { src: "{{ cache_dir }}/goharbor-redis-photon.tar.gz",          dest: "/tmp" }
+  - { src: "{{ cache_dir }}/goharbor-registry-photon.tar.gz",       dest: "/tmp" }
+  - { src: "{{ cache_dir }}/goharbor-trivy-adapter-photon.tar.gz",  dest: "/tmp" }
+
+templates:
+  - { src: "createProject.sh",  dest: "{{ harbor_dir }}",                   mode: "0755" }
+  - { src: "harbor.yml.tmpl",   dest: "{{ harbor_dir }}/harbor.yml",        mode: "0644" }
+  - { src: "harbor.service",    dest: "{{ root_dir }}/etc/systemd/system",  mode: "0644" }
+
+start_command:
+  - ln -sf {{ root_dir }}/etc/systemd/system/harbor.service /etc/systemd/system
+  - docker-compose -f {{ harbor_dir }}/docker-compose.yml down || true
+  - rm -rf {{ harbor_data_dir }}
+  - docker load -i /tmp/goharbor-chartmuseum-photon.tar.gz   && rm -f /tmp/goharbor-chartmuseum-photon.tar.gz
+  - docker load -i /tmp/goharbor-harbor-core.tar.gz          && rm -f /tmp/goharbor-harbor-core.tar.gz
+  - docker load -i /tmp/goharbor-harbor-db.tar.gz            && rm -f /tmp/goharbor-harbor-db.tar.gz
+  - docker load -i /tmp/goharbor-harbor-exporter.tar.gz      && rm -f /tmp/goharbor-harbor-exporter.tar.gz
+  - docker load -i /tmp/goharbor-harbor-jobservice.tar.gz    && rm -f /tmp/goharbor-harbor-jobservice.tar.gz
+  - docker load -i /tmp/goharbor-harbor-log.tar.gz           && rm -f /tmp/goharbor-harbor-log.tar.gz
+  - docker load -i /tmp/goharbor-harbor-portal.tar.gz        && rm -f /tmp/goharbor-harbor-portal.tar.gz
+  - docker load -i /tmp/goharbor-harbor-registryctl.tar.gz   && rm -f /tmp/goharbor-harbor-registryctl.tar.gz
+  - docker load -i /tmp/goharbor-nginx-photon.tar.gz         && rm -f /tmp/goharbor-nginx-photon.tar.gz
+  - docker load -i /tmp/goharbor-notary-server-photon.tar.gz && rm -f /tmp/goharbor-notary-server-photon.tar.gz
+  - docker load -i /tmp/goharbor-notary-signer-photon.tar.gz && rm -f /tmp/goharbor-notary-signer-photon.tar.gz
+  - docker load -i /tmp/goharbor-prepare.tar.gz              && rm -f /tmp/goharbor-prepare.tar.gz
+  - docker load -i /tmp/goharbor-redis-photon.tar.gz         && rm -f /tmp/goharbor-redis-photon.tar.gz
+  - docker load -i /tmp/goharbor-registry-photon.tar.gz      && rm -f /tmp/goharbor-registry-photon.tar.gz
+  - docker load -i /tmp/goharbor-trivy-adapter-photon.tar.gz && rm -f /tmp/goharbor-trivy-adapter-photon.tar.gz
+  - cd {{ harbor_dir }} && ./install.sh --with-chartmuseum
+  - sleep 10
+  - systemctl daemon-reload
+  - systemctl enable harbor
+
+block_list_after:
+  - { file: "{{ harbor_dir }}/docker-compose.yml", marker: "#{mark} log:extra_hosts",         block: "{{ lookup('template', 'docker-compose.yml.extra_hosts') }}", after: "^  log:" }
+  - { file: "{{ harbor_dir }}/docker-compose.yml", marker: "#{mark} registry:extra_hosts",    block: "{{ lookup('template', 'docker-compose.yml.extra_hosts') }}", after: "^  registry:" }
+  - { file: "{{ harbor_dir }}/docker-compose.yml", marker: "#{mark} registryctl:extra_hosts", block: "{{ lookup('template', 'docker-compose.yml.extra_hosts') }}", after: "^  registryctl:" }
+  - { file: "{{ harbor_dir }}/docker-compose.yml", marker: "#{mark} postgresql:extra_hosts",  block: "{{ lookup('template', 'docker-compose.yml.extra_hosts') }}", after: "^  postgresql:" }
+  - { file: "{{ harbor_dir }}/docker-compose.yml", marker: "#{mark} core:extra_hosts",        block: "{{ lookup('template', 'docker-compose.yml.extra_hosts') }}", after: "^  core:" }
+  - { file: "{{ harbor_dir }}/docker-compose.yml", marker: "#{mark} portal:extra_hosts",      block: "{{ lookup('template', 'docker-compose.yml.extra_hosts') }}", after: "^  portal:" }
+  - { file: "{{ harbor_dir }}/docker-compose.yml", marker: "#{mark} jobservice:extra_hosts",  block: "{{ lookup('template', 'docker-compose.yml.extra_hosts') }}", after: "^  jobservice:" }
+  - { file: "{{ harbor_dir }}/docker-compose.yml", marker: "#{mark} redis:extra_hosts",       block: "{{ lookup('template', 'docker-compose.yml.extra_hosts') }}", after: "^  redis:" }
+  - { file: "{{ harbor_dir }}/docker-compose.yml", marker: "#{mark} proxy:extra_hosts",       block: "{{ lookup('template', 'docker-compose.yml.extra_hosts') }}", after: "^  proxy:" }
+  - { file: "{{ harbor_dir }}/docker-compose.yml", marker: "#{mark} chartmuseum:extra_hosts", block: "{{ lookup('template', 'docker-compose.yml.extra_hosts') }}", after: "^  chartmuseum:" }
+  - { file: "{{ harbor_dir }}/docker-compose.yml", marker: "#{mark} exporter:extra_hosts",    block: "{{ lookup('template', 'docker-compose.yml.extra_hosts') }}", after: "^  exporter:" }
+
+check_app:
+  - "[ $(docker ps | grep goharbor | grep Up | grep -c healthy) -ge 10 ]"
+  - "{{ harbor_dir }}/createProject.sh"
+
+check_app_delay: 10

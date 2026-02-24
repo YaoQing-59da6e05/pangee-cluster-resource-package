@@ -1,0 +1,8 @@
+- name: Install
+  shell: "{{ item }}"
+  environment:
+    PATH: "{{ root_dir }}/usr/bin:{{ ansible_env.PATH }}"
+  loop: "{{ start_command }}"
+  loop_control:
+    label: "{{ item }}"
+  when: start_command is defined

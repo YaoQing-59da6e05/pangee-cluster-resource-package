@@ -1,0 +1,37 @@
+set_facts:
+  - { var: "ssl_ext_dir", value: "/opt" }
+
+local_template:
+  - { src: "etcd_ssl.cnf",        dest: "{{ ssl_ext_dir }}" }
+  - { src: "master_ssl.cnf",      dest: "{{ ssl_ext_dir }}" }
+  - { src: "client_ssl.cnf",      dest: "{{ ssl_ext_dir }}" }
+  - { src: "front_proxy_ssl.cnf", dest: "{{ ssl_ext_dir }}" }
+
+local_shell:
+  - rm -rf {{ certs_dir }} || true
+  - mkdir -p {{ certs_dir }} || true
+  - mv {{ ssl_ext_dir }}/etcd_ssl.cnf {{ certs_dir }}
+  - mv {{ ssl_ext_dir }}/master_ssl.cnf {{ certs_dir }}
+  - mv {{ ssl_ext_dir }}/client_ssl.cnf {{ certs_dir }}
+  - mv {{ ssl_ext_dir }}/front_proxy_ssl.cnf {{ certs_dir }}
+  - openssl genrsa -out {{ certs_dir }}/ca.key 2048
+  - openssl req -x509 -new -nodes -key {{ certs_dir }}/ca.key -subj '/CN=kubernetes-ca/C=CN/ST=BeiJing/L=BeiJing/OU=CMCC/O=PJPAAS' -days 36500 -out {{ certs_dir }}/ca.crt
+  - openssl genrsa -out {{ certs_dir }}/etcd_server.key 2048
+  - openssl req -new -key {{ certs_dir }}/etcd_server.key -subj '/CN=kube-etcd/C=CN/ST=BeiJing/L=BeiJing/OU=CMCC/O=PJPAAS' -out {{ certs_dir }}/etcd_server.csr -config {{ certs_dir }}/etcd_ssl.cnf
+  - openssl x509 -req -in {{ certs_dir }}/etcd_server.csr -CA {{ certs_dir }}/ca.crt -CAkey {{ certs_dir }}/ca.key -CAcreateserial -out {{ certs_dir }}/etcd_server.crt -days 36500 -extensions v3_req -extfile {{ certs_dir }}/etcd_ssl.cnf
+  - openssl genrsa -out {{ certs_dir }}/etcd_client.key 2048
+  - openssl req -new -key {{ certs_dir }}/etcd_client.key -subj '/CN=etcd-client/C=CN/ST=BeiJing/L=BeiJing/OU=CMCC/O=PJPAAS' -out {{ certs_dir }}/etcd_client.csr -config {{ certs_dir }}/etcd_ssl.cnf
+  - openssl x509 -req -in {{ certs_dir }}/etcd_client.csr -CA {{ certs_dir }}/ca.crt -CAkey {{ certs_dir }}/ca.key -CAcreateserial -out {{ certs_dir }}/etcd_client.crt -days 36500 -extensions v3_req -extfile {{ certs_dir }}/etcd_ssl.cnf
+  - openssl genrsa -out {{ certs_dir }}/apiserver.key 2048
+  - openssl req -new -key {{ certs_dir }}/apiserver.key -subj '/CN=kube-apiserver/C=CN/ST=BeiJing/L=BeiJing/OU=CMCC/O=PJPAAS' -out {{ certs_dir }}/apiserver.csr -config {{ certs_dir }}/master_ssl.cnf
+  - openssl x509 -req -in {{ certs_dir }}/apiserver.csr -CA {{ certs_dir }}/ca.crt -CAkey {{ certs_dir }}/ca.key -CAcreateserial -out {{ certs_dir }}/apiserver.crt -days 36500 -extensions v3_req -extfile {{ certs_dir }}/master_ssl.cnf
+  - openssl genrsa -out {{ certs_dir }}/client.key 2048
+  - openssl req -new -key {{ certs_dir }}/client.key -subj '/CN=kubernetes-admin/C=CN/ST=BeiJing/L=BeiJing/OU=CMCC/O=system:masters' -out {{ certs_dir }}/client.csr -config {{ certs_dir }}/client_ssl.cnf
+  - openssl x509 -req -in {{ certs_dir }}/client.csr -CA {{ certs_dir }}/ca.crt -CAkey {{ certs_dir }}/ca.key -CAcreateserial -out {{ certs_dir }}/client.crt -days 36500 -extensions v3_req -extfile {{ certs_dir }}/client_ssl.cnf
+  - openssl genrsa -out {{ certs_dir }}/sa.key 2048
+  - openssl rsa -in {{ certs_dir }}/sa.key -pubout -out {{ certs_dir }}/sa.pub
+  - openssl genrsa -out {{ certs_dir }}/front-proxy-ca.key 2048
+  - openssl req -x509 -new -nodes -key {{ certs_dir }}/front-proxy-ca.key -subj '/CN=kubernetes-front-proxy-ca/C=CN/ST=BeiJing/L=BeiJing/OU=CMCC/O=PJPAAS' -days 36500 -out {{ certs_dir }}/front-proxy-ca.crt
+  - openssl genrsa -out {{ certs_dir }}/front-proxy-client.key 2048
+  - openssl req -new -key {{ certs_dir }}/front-proxy-client.key -subj '/CN=front-proxy-client/C=CN/ST=BeiJing/L=BeiJing/OU=CMCC/O=PJPASS' -out {{ certs_dir }}/front-proxy-client.csr -config {{ certs_dir }}/front_proxy_ssl.cnf
+  - openssl x509 -req -in {{ certs_dir }}/front-proxy-client.csr -CA {{ certs_dir }}/front-proxy-ca.crt -CAkey {{ certs_dir }}/front-proxy-ca.key -CAcreateserial -out {{ certs_dir }}/front-proxy-client.crt -days 36500 -extensions v3_req -extfile {{ certs_dir }}/front_proxy_ssl.cnf

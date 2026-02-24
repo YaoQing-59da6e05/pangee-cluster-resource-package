@@ -1,0 +1,4 @@
+    extra_hosts:
+{% for item in extra_hosts %}
+      - {{ item }}
+{% endfor %}

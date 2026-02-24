@@ -1,0 +1,6 @@
+# kubernetes kubelet (minion) config
+
+KUBELET_ARGS="--root-dir={{kube_dir}} --v=0 --pod-infra-container-image={{ image_base_pause }} \
+  --kubeconfig={{ kube_config_dir }}/kubeconfig --runtime-cgroups=/systemd/system.slice --kubelet-cgroups=/systemd/system.slice  \
+  --hostname-override={{ hostvars[inventory_hostname]['ip'] }} \
+  --config={{ kube_config_dir }}/kubelet.config"
