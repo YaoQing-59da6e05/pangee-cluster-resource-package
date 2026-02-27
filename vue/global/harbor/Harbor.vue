@@ -39,13 +39,13 @@ const modelValue = defineModel<any>();
 
 const enabled = computed({
   get() {
-    return modelValue.value.all.children.target.children.harbor.vars.harbor_vip !== undefined
+    return modelValue.value.all.children.target.children.harbor.vars.enabled
   },
   set(v: boolean) {
     if (v) {
-      modelValue.value.all.children.target.children.harbor.vars.harbor_vip = null
+      modelValue.value.all.children.target.children.harbor.vars.enabled = true
     } else {
-      delete modelValue.value.all.children.target.children.harbor.vars.harbor_vip
+      modelValue.value.all.children.target.children.harbor.vars.enabled = false
     }
   }
 });

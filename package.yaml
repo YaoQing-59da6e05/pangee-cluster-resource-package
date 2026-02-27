@@ -90,11 +90,19 @@ data:
       title:
         zh: 安装Harbor
         en: Install Harbor
+      enabled_on:
+        - variable: all.children.target.children.harbor.vars.enabled
+          operator: equal
+          value: true
       steps:
         - name: 01-install-harbor
           title:
             zh: 安装 Harbor
             en: Install Harbor
+          mark_pangeecluster_node_action_done:
+            ansible_group: 
+              - all.children.target.children.harbor
+            action: add_node
   dependency:
     - name: kubernetes
       version: 1.28.15

@@ -36,7 +36,8 @@ all:
         harbor:
           hosts: {}
           vars:
-            # harbor_vip: # Harbor 的虚拟IP地址，如果不存在，则说明 harbor section 未启用
+            enabled: false  # 是否启用harbor，默认不启用
+            harbor_vip:     # Harbor 的虚拟IP地址
             harbor_vip_ipv6:
             harbor_vip_port: 1180
             harbor_admin_password: GENERATE_PASSWORD_PLACEHOLDER # 现有脚本将 harbor_admin_password 设置到 containerd 的 toml 文件中，存在过度授权的问题。
