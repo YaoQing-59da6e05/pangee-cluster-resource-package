@@ -105,8 +105,7 @@ const options = [
   },
   {
     label: 'ipvs',
-    value: 'ipvs',
-    disabled: true
+    value: 'ipvs'
   }
 ]
 
