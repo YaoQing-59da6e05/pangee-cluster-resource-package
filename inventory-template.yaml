@@ -59,6 +59,6 @@ all:
             kube_service_cidr: 10.96.0.0/16
             kube_service_cidr_ipv6: 2001:db8::/112
             kube_service_nodeport_range: 30000-32767
-            kube_proxy_mode: iptables # 现有脚本不支持 ipvs
+            kube_proxy_mode: iptables # iptables/ipvs
             kube_proxy_metrics_port: 10249
             kube_cluster_domain: cluster.local

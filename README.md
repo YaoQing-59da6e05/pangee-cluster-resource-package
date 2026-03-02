@@ -34,4 +34,3 @@ Kubernetes 的高可用部署架构如下图所示：
 
 - ETCD 数据路径： `{{ root_dir }}/etcd_data/etcd`
 - kubernetes 二进制路径： `{{ root_dir }}/kubernetes`
-- kubernetes 日志路径：`{{ root_dir }}/log/kubernetes`

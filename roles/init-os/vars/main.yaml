@@ -3,20 +3,26 @@ set_facts:
   - { var: "shmall",      value: "{{ ansible_memtotal_mb*1024*1024//2//(lookup('pipe', 'getconf PAGESIZE') | int) }}" }
   - { var: "extra_hosts", value: "{{ harbor_extra_hosts | map('split', ':') | map('reverse') | map('join', ' ') | join('\n') }}" }
 
+dir_list:
+  - { path: "/etc/modules-load.d",  mode: "0755" }
+
+copy_list:
+  - { src: "10-k8s-modules.conf", dest: "/etc/modules-load.d",  mode: "0644" }
+
 start_command:
   - hostnamectl set-hostname {{ inventory_hostname }}
   - |
     if [ -x "$(command -v yum)" ]; then
-      yum -y install nfs-utils conntrack iptables libseccomp
+      yum -y install nfs-utils conntrack iptables ipset libseccomp
     elif [ -x "$(command -v apt)" ]; then
-      apt -y install nfs-kernel-server conntrack iptables libseccomp2
+      apt -y install nfs-kernel-server conntrack iptables ipset libseccomp2
     else
       echo -e "Error, unsupported OS." >&2
       exit 1
     fi
   - systemctl restart nfs-server
   - systemctl enable nfs-server
-  - modprobe br_netfilter
+  - systemctl restart systemd-modules-load
   - cp /etc/sysctl.conf /etc/sysctl.conf.bak || true
   - cp /etc/security/limits.conf /etc/security/limits.conf.bak || true
   - setenforce 0 || true
