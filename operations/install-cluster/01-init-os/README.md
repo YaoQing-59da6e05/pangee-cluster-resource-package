@@ -6,9 +6,9 @@
 
 - 初始化操作系统参数
   - 设置主机名（inventory_hostname）
-  - 安装依赖包 nfs-utils、conntrack、iptables
+  - 安装依赖包 nfs-utils、conntrack、iptables、ipset、libseccomp
   - 允许并重启 nfs-server 服务
-  - 加载 br_netfilter 模块
+  - 重启 systemd-modules-load 服务
   - 备份/etc/sysctl.conf
   - 设置 kernel.shmmax、kernel.shmall、kernel.shmmni
   - 设置 kernel.pid_max

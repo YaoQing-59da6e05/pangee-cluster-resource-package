@@ -4,6 +4,22 @@
   loop: "{{ set_facts }}"
   when: set_facts is defined
 
+- name: Create directories
+  file:
+    path: "{{ item.path }}"
+    mode: "{{ item.mode | default(omit) }}"
+    state: "{{ item.state | default('directory') }}"
+  loop: "{{ dir_list }}"
+  when: dir_list is defined
+
+- name: Copy files
+  copy:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    mode: "{{ item.mode | default(omit) }}"
+  loop: "{{ copy_list }}"
+  when: copy_list is defined
+
 - name: Install
   shell: "{{ item }}"
   environment:

@@ -5,7 +5,7 @@
   - 更新apiserver服务端证书apiserver.csr、apiserver.crt 
 
 - 安装 kube-apiserver（新增控制节点）
-  - 创建{{ kube_ssl_dir }}、{{ root_dir }}/log/kubernetes、$HOME/.kube目录
+  - 创建{{ kube_ssl_dir }}、$HOME/.kube目录
   - 复制可执行文件kube-apiserver
   - 复制证书文件apiserver.crt、apiserver.key、ca.crt、ca.key、client.crt、client.key、etcd_client.crt、etcd_client.key、front-proxy-ca.crt、front-proxy-ca.key、front-proxy-client.crt、front-proxy-client.key、sa.key、sa.pub
   - 渲染模板至{{ kube_config_dir }}/apiserver、{{ kube_config_dir }}/kubeconfig、$HOME/.kube/config、{{ root_dir }}/etc/systemd/system/kube-apiserver.service
