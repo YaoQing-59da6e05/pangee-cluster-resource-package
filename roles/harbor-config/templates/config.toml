@@ -163,7 +163,7 @@ version = 2
 
       [plugins."io.containerd.grpc.v1.cri".registry.configs]
 {% for registry in cri_containerd_insecure_registries %}
-        [plugins."io.containerd.grpc.v1.cri".registry.configs."{{ registry }}".tls]
+        [plugins."io.containerd.grpc.v1.cri".registry.configs."{{ registry.split('://')[-1] }}".tls]
           insecure_skip_verify = true
 {% endfor %}
         [plugins."io.containerd.grpc.v1.cri".registry.configs."{{ hostvars[groups['harbor'][0]]['harbor_vip'] }}:{{ hostvars[groups['harbor'][0]]['harbor_vip_port'] }}".tls]
@@ -177,8 +177,8 @@ version = 2
 
       [plugins."io.containerd.grpc.v1.cri".registry.mirrors]
 {% for registry in cri_containerd_insecure_registries %}
-        [plugins."io.containerd.grpc.v1.cri".registry.mirrors."{{ registry }}"]
-          endpoint = ["http://{{ registry }}"]
+        [plugins."io.containerd.grpc.v1.cri".registry.mirrors."{{ registry.split('://')[-1] }}"]
+          endpoint = ["{{ registry }}"]
 {% endfor %}
         [plugins."io.containerd.grpc.v1.cri".registry.mirrors."{{ hostvars[groups['harbor'][0]]['harbor_vip'] }}:{{ hostvars[groups['harbor'][0]]['harbor_vip_port'] }}"]
           endpoint = ["http://{{ hostvars[groups['harbor'][0]]['harbor_vip'] }}:{{ hostvars[groups['harbor'][0]]['harbor_vip_port'] }}"]

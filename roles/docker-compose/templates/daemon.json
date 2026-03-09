@@ -1,6 +1,9 @@
 {
   "exec-opts": ["native.cgroupdriver=systemd"],
   "insecure-registries": [
+{% for registry in cri_containerd_insecure_registries %}
+    "{{ registry.split('://')[-1] }}",
+{% endfor %}
 {% for item in groups['harbor'] %}
     "{{ hostvars[item]['ip'] }}:{{ hostvars[item]['harbor_vip_port'] }}",
 {% endfor %}
